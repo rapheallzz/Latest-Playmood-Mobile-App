@@ -46,31 +46,31 @@ const LikeCard = () => {
       )}
 
       <View style={styles.overlayContainer}>
-        <View style={styles.overlayTextContainer}>
-          <Text style={styles.buttonText}>{currentContent ? currentContent.title : 'Loading...'}</Text>
-          <Text style={styles.buttonTextCat}>{currentContent ? currentContent.category : ''}</Text>
+        <View style={styles.topContainer}>
+          <View style={styles.buttonContainer}>
+            <Pressable style={styles.button}>
+              <Image source={require('../../assets/whiteheart.png')} style={styles.buttonicon} />
+            </Pressable>
+            <Pressable style={styles.button}>
+              <Image source={require('../../assets/share.png')} style={styles.buttonicon} />
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.overlayButtonsContainer}>
-          {/* First Button with icon image */}
-          <Pressable style={styles.iconButton} onPress={handlePlayPress}>
-            <Image source={require('../../assets/play-button.png')} style={styles.icon} />
-            <Text style={styles.iconText}>Play</Text>
-          </Pressable>
-          {/* Second Button with icon image */}
-          <Pressable style={styles.iconButton}>
-            <Image source={require('../../assets/plus.png')} style={styles.icon} />
-            <Text style={styles.iconText}>My List</Text>
-          </Pressable>
-        </View>
-        <View style={styles.buttonContainer}>
-          {/* First Button with icon image */}
-          <Pressable style={styles.button}>
-            <Image source={require('../../assets/whiteheart.png')} style={styles.buttonicon} />
-          </Pressable>
-          {/* Second Button with icon image */}
-          <Pressable style={styles.button}>
-            <Image source={require('../../assets/share.png')} style={styles.buttonicon} />
-          </Pressable>
+        <View style={styles.bottomContainer}>
+          <View style={styles.overlayTextContainer}>
+            <Text style={styles.buttonText}>{currentContent ? currentContent.title : 'Loading...'}</Text>
+            <Text style={styles.buttonTextCat}>{currentContent ? currentContent.category : ''}</Text>
+          </View>
+          <View style={styles.overlayButtonsContainer}>
+            <Pressable style={styles.iconButton} onPress={handlePlayPress}>
+              <Image source={require('../../assets/play-button.png')} style={styles.icon} />
+              <Text style={styles.iconText}>Play</Text>
+            </Pressable>
+            <Pressable style={styles.iconButton}>
+              <Image source={require('../../assets/plus.png')} style={styles.icon} />
+              <Text style={styles.iconText}>My List</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>
@@ -94,19 +94,25 @@ const styles = StyleSheet.create({
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  topContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 10,
+  },
+  bottomContainer: {
+    padding: 10,
   },
   overlayTextContainer: {
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingTop: 350,
     paddingBottom: 20,
   },
   overlayButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingTop: 5,
-    gap:2
+    gap: 2,
   },
   buttonTextCat: {
     fontWeight: 'bold',
@@ -115,42 +121,32 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   iconButton: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 5,
     backgroundColor: 'white',
-    width: 100,
     height: 30,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   icon: {
     width: 20,
     height: 20,
-    marginRight: 5, 
+    marginRight: 5,
   },
   iconText: {
-    color: 'black', 
-    fontSize: 10, 
+    color: 'black',
+    fontSize: 10,
   },
   buttonContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
-    alignItems: 'right',
-    paddingLeft: 190,
   },
   button: {
-    alignItems: 'left',
     padding: 3,
   },
   buttonicon: {
     width: 20,
     height: 20,
-    marginRight: 5, 
-    padding: 8,
   },
   buttonText: {
     color: 'white',

@@ -6,7 +6,7 @@ import Recommended from '../components/Recommended';
 import Watching from '../components/Watching';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
-import { Video } from 'expo-av';
+import { Video } from 'expo-video';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay  } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesome } from '@expo/vector-icons';

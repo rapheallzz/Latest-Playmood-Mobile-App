@@ -1,5 +1,5 @@
 import React, { useState }  from 'react';
-import { View, Text, Pressable, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, Image, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import play from '../../assets/play-button2.png';
 import Recommended from '../components/Recommended';
@@ -19,6 +19,7 @@ const VideoScreen = ({ route }) => {
   const { title, credits, desc, movie, _id } = route.params;
   const user = useSelector((state) => state.user);
   const userId = user ? user._id : null;
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
 
   console.log('User state in video:', user);
 
@@ -92,6 +93,9 @@ const VideoScreen = ({ route }) => {
 <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
        
 <View style={styles.videoContainer}>
+  {isVideoLoading && (
+    <ActivityIndicator style={styles.loadingIndicator} size="large" color="#ffffff" />
+  )}
   <Video
     style={styles.video}
     source={{
@@ -101,6 +105,8 @@ const VideoScreen = ({ route }) => {
     resizeMode="contain"
     isLooping
     shouldPlay
+    onLoad={() => setIsVideoLoading(false)}
+    onError={() => setIsVideoLoading(false)}
   />
 </View>
 
@@ -273,6 +279,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  loadingIndicator: {
+    position: 'absolute',
+    zIndex: 1,
   },
   video: {
     width: '100%',

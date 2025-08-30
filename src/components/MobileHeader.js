@@ -52,14 +52,16 @@ export default function MobileHeader({ channels, set_channels }) {
     <View style={styles.mobileHeader}>
       <View style={styles.container}>
         <View style={styles.logoContainer}>
-          <Pressable onPress={() => navigation.navigate('Home')}>
-            <Image source={playmood} style={styles.logo} />
-          </Pressable>
-          {user && user._id && (
-            <Pressable onPress={() => navigation.navigate('Dashboard')}>
-              <Image source={profile} style={styles.profileIcon} />
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Pressable onPress={() => navigation.navigate('Home')}>
+              <Image source={playmood} style={styles.logo} />
             </Pressable>
-          )}
+            {user && user._id && (
+              <Pressable onPress={() => navigation.navigate('Dashboard')}>
+                <Image source={profile} style={styles.profileIcon} />
+              </Pressable>
+            )}
+          </View>
           <Pressable onPress={toggleSidebar}>
             <FontAwesome name="bars" size={30} color="white" />
           </Pressable>
@@ -177,6 +179,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+    marginLeft: 10,
   },
   navigation: {
     flexDirection: 'row',

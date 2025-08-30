@@ -297,6 +297,7 @@ const styles = StyleSheet.create({
     flexDirection:'column',
     justifyContent:'center',
     marginVertical:20,
+    alignItems:'center',
    
    
   },

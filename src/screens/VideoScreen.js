@@ -400,12 +400,14 @@ const styles = StyleSheet.create({
   credits: {
     color: 'white',
     fontSize: 13,
+    textAlign:'center'
   },
   description: {
     color: 'white',
     fontSize: 12,
     marginTop: 10,
     overflow: 'scroll',
+    textAlign:'center',
     
   },
   buttonContainer: {

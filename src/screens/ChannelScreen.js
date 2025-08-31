@@ -9,7 +9,8 @@ export default function CreatorChannel() {
     const navigation = useNavigation();
     const route = useRoute();
     
-    const { creatorId, name, profileImage, bannerImage, subscribers } = route.params || {};
+    const { creator } = route.params || {};
+    const creatorId = creator?._id;
     
     const [subscribed, setSubscribed] = useState(false);
     const [spank, setSpank] = useState(false);
@@ -54,7 +55,7 @@ export default function CreatorChannel() {
   
     <ScrollView style={styles.container}>
       <View style={styles.bannerContainer}>
-        <Image source={{ uri: state.bannerImage }} style={styles.bannerImage} />
+        <Image source={{ uri: creator.bannerImage }} style={styles.bannerImage} />
         <View style={styles.shareIcons}>
           <Pressable>
             <FontAwesome name="facebook" size={24} color="white" />
@@ -75,10 +76,10 @@ export default function CreatorChannel() {
       </View>
 
       <View style={styles.profileContainer}>
-        <Image source={{ uri: state.profileImage }} style={styles.profileImage} />
+        <Image source={{ uri: creator.profileImage }} style={styles.profileImage} />
         <View>
-          <Text style={styles.creatorName}>{state.name}</Text>
-          <Text style={styles.subscriberCount}>{state.subscribers} subscribers</Text>
+          <Text style={styles.creatorName}>{creator.name}</Text>
+          <Text style={styles.subscriberCount}>{creator.subscribers.length} subscribers</Text>
         </View>
         <Pressable style={styles.subscribeButton} onPress={handleSubscribeClick}>
           <Text style={styles.subscribeText}>{subscribed ? 'Unsubscribe' : 'Subscribe'}</Text>

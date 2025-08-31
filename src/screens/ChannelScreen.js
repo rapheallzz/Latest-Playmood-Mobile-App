@@ -1,48 +1,410 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, FlatList, Linking } from 'react-native';
+import ContentCard from '../components/ContentCard';
+import CommunityPostCard from '../components/CommunityPostCard';
 import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { FacebookShareButton, TwitterShareButton, WhatsappShareButton, LinkedinShareButton } from 'react-share';
+import { useSelector, useDispatch } from 'react-redux';
+import { setUser } from '../features/userSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function CreatorChannel() {
     const navigation = useNavigation();
     const route = useRoute();
+    const dispatch = useDispatch();
+    const user = useSelector(state => state.user);
     
     const { creator } = route.params || {};
     const creatorId = creator?._id;
     
     const [subscribed, setSubscribed] = useState(false);
     const [spank, setSpank] = useState(false);
-    const [data, setData] = useState([]);
-  
-    const handleSubscribeClick = () => {
-      setSubscribed(!subscribed);
-      setSpank(true);
-      setTimeout(() => {
-        setSpank(false);
-      }, 1000);
+    const [creatorData, setCreatorData] = useState(null);
+    const [videos, setVideos] = useState([]);
+    const [communityPosts, setCommunityPosts] = useState([]);
+    const [playlists, setPlaylists] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+    const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
+    const [error, setError] = useState('');
+    const [newComment, setNewComment] = useState({});
+    const [activeTab, setActiveTab] = useState('VIDEOS');
+
+    const fetchPlaylists = async () => {
+        if (!creatorId) {
+            setError('Creator ID is missing.');
+            Alert.alert('Error', 'Creator ID is missing.');
+            return;
+        }
+
+        setIsLoadingPlaylists(true);
+        setError('');
+        try {
+            const response = await axios.get(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/playlists/user/${creatorId}/public`
+            );
+            setPlaylists(response.data.playlists || []);
+        } catch (err) {
+            console.error('Error fetching playlists:', err.response?.data || err.message);
+            setError(err.response?.data?.message || 'Failed to load playlists.');
+            Alert.alert('Error', 'Failed to load playlists.');
+            setPlaylists([]);
+        } finally {
+            setIsLoadingPlaylists(false);
+        }
+    };
+
+    const fetchCommunityPosts = async () => {
+        if (!creatorId) {
+            setError('Creator ID is missing.');
+            Alert.alert('Error', 'Creator ID is missing.');
+            return;
+        }
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData) {
+            Alert.alert('Error', 'Please log in to view community posts.');
+            return;
+        }
+
+        setIsLoadingPosts(true);
+        setError('');
+        try {
+            const token = userData.token;
+            const response = await axios.get(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/community/${creatorId}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            setCommunityPosts(Array.isArray(response.data) ? response.data : []);
+        } catch (err) {
+            console.error('Error fetching community posts:', err.response?.data || err.message);
+            if (
+              err.response?.status === 404 ||
+              err.response?.data?.message?.toLowerCase().includes('no community posts')
+            ) {
+              setCommunityPosts([]);
+            } else {
+              setError(
+                err.response?.data?.message || 'Failed to load community posts due to a server error.'
+              );
+              Alert.alert('Error', 'Failed to load community posts due to a server error.');
+              setCommunityPosts([]);
+            }
+        } finally {
+            setIsLoadingPosts(false);
+        }
+    };
+
+    const handleTabClick = (tab) => {
+        setActiveTab(tab);
+        if (tab === 'PLAYLISTS' && playlists.length === 0) {
+            fetchPlaylists();
+        }
+        if (tab === 'COMMUNITY' && communityPosts.length === 0) {
+            fetchCommunityPosts();
+        }
+        if (tab === 'ABOUT') {
+            // No data fetching needed for about tab
+        }
+    };
+
+    const handleLike = async (postId, isLiked) => {
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData) {
+            Alert.alert('Error', 'Please log in to like posts.');
+            return;
+        }
+        try {
+            const token = userData.token;
+            const endpoint = isLiked
+                ? `/api/community/${postId}/unlike`
+                : `/api/community/${postId}/like`;
+            await axios.put(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com${endpoint}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setCommunityPosts((prev) =>
+                prev.map((post) =>
+                    post._id === postId
+                        ? {
+                            ...post,
+                            likes: isLiked
+                                ? post.likes.filter((id) => id !== userData._id)
+                                : [...post.likes, userData._id],
+                        }
+                        : post
+                )
+            );
+        } catch (err) {
+            console.error('Error liking/unliking post:', err);
+            Alert.alert('Error', 'Failed to update like status.');
+        }
+    };
+
+    const handleCommentSubmit = async (postId, comment) => {
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData) {
+            Alert.alert('Error', 'Please log in to comment.');
+            return;
+        }
+        if (!comment.trim()) {
+            Alert.alert('Error', 'Comment cannot be empty.');
+            return;
+        }
+        try {
+            const token = userData.token;
+            const response = await axios.post(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/community/${postId}/comment`,
+                { content: comment },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setCommunityPosts((prev) =>
+                prev.map((post) =>
+                    post._id === postId
+                        ? {
+                            ...post,
+                            comments: [
+                                ...post.comments,
+                                {
+                                    _id: response.data.commentId || Date.now(),
+                                    user: userData,
+                                    content: comment,
+                                    timestamp: new Date().toISOString(),
+                                },
+                            ],
+                        }
+                        : post
+                )
+            );
+        } catch (err) {
+            console.error('Error adding comment:', err);
+            Alert.alert('Error', 'Failed to add comment.');
+        }
+    };
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'VIDEOS':
+                return (
+                    <>
+                        <Text style={styles.contentTitle}>Videos</Text>
+                        <FlatList
+                            data={videos}
+                            renderItem={({ item }) => <ContentCard item={item} />}
+                            keyExtractor={(item) => item._id}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        />
+                    </>
+                );
+            case 'PLAYLISTS':
+                if (isLoadingPlaylists) {
+                    return <ActivityIndicator size="large" color="#fff" />;
+                }
+                return (
+                    <FlatList
+                        data={playlists}
+                        keyExtractor={(item) => item._id}
+                        renderItem={({ item: playlist }) => (
+                            <View>
+                                <Text style={styles.contentTitle}>{playlist.name}</Text>
+                                {playlist.videos.length > 0 ? (
+                                    <FlatList
+                                        data={playlist.videos}
+                                        renderItem={({ item }) => <ContentCard item={item} />}
+                                        keyExtractor={(item) => item._id}
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                    />
+                                ) : (
+                                    <Text style={styles.errorText}>This playlist has no videos.</Text>
+                                )}
+                            </View>
+                        )}
+                    />
+                );
+            case 'COMMUNITY':
+                if (isLoadingPosts) {
+                    return <ActivityIndicator size="large" color="#fff" />;
+                }
+                return (
+                    <FlatList
+                        data={communityPosts}
+                        keyExtractor={(item) => item._id}
+                        renderItem={({ item }) => (
+                            <CommunityPostCard
+                                post={item}
+                                user={user}
+                                onLike={handleLike}
+                                onCommentSubmit={handleCommentSubmit}
+                            />
+                        )}
+                    />
+                );
+            case 'ABOUT':
+                return (
+                    <View>
+                        <Text style={styles.contentTitle}>About</Text>
+                        <Text style={styles.aboutText}>{creatorData?.about}</Text>
+                        <Text style={styles.contentTitle}>Connect</Text>
+                        <View style={styles.socialIcons}>
+                            {creatorData?.twitter && (
+                                <Pressable onPress={() => Linking.openURL(creatorData.twitter)}>
+                                    <FontAwesome name="twitter" size={24} color="white" />
+                                </Pressable>
+                            )}
+                            {creatorData?.instagram && (
+                                <Pressable onPress={() => Linking.openURL(creatorData.instagram)}>
+                                    <FontAwesome name="instagram" size={24} color="white" />
+                                </Pressable>
+                            )}
+                            {creatorData?.linkedin && (
+                                <Pressable onPress={() => Linking.openURL(creatorData.linkedin)}>
+                                    <FontAwesome name="linkedin" size={24} color="white" />
+                                </Pressable>
+                            )}
+                            {creatorData?.tiktok && (
+                                <Pressable onPress={() => Linking.openURL(creatorData.tiktok)}>
+                                    <FontAwesome name="tiktok" size={24} color="white" />
+                                </Pressable>
+                            )}
+                        </View>
+                    </View>
+                );
+            default:
+                return null;
+        }
+    };
+
+    const handleSubscribeClick = async () => {
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData) {
+          Alert.alert('Error', 'Please log in to subscribe.');
+          return;
+        }
+
+        setSpank(true);
+        setTimeout(() => {
+          setSpank(false);
+        }, 1000);
+
+        try {
+          const token = userData.token;
+          if (!token) {
+            Alert.alert('Error', 'Authentication token missing.');
+            return;
+          }
+          if (subscribed) {
+            await axios.put(
+              `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/subscribe`,
+              { creatorId: creatorId },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            setSubscribed(false);
+            setCreatorData((prev) => ({
+              ...prev,
+              subscribers: prev.subscribers > 0 ? prev.subscribers - 1 : 0,
+            }));
+          } else {
+            await axios.post(
+              `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/subscribe`,
+              { creatorId: creatorId },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            setSubscribed(true);
+            setCreatorData((prev) => ({
+              ...prev,
+              subscribers: prev.subscribers + 1,
+            }));
+          }
+        } catch (err) {
+          console.error('Subscription error:', err.response?.data || err.message);
+          Alert.alert(
+            'Error',
+            err.response?.data?.message ||
+              (subscribed ? 'Failed to unsubscribe.' : 'Failed to subscribe.')
+          );
+        }
     };
   
     useEffect(() => {
-      if (!creatorId) {
-        Alert.alert('Error', 'No creator information available');
-        return;
-      }
+        const fetchCreatorData = async () => {
+          if (!creatorId) {
+            setError('Creator ID is missing.');
+            Alert.alert('Error', 'Creator ID is missing.');
+            setIsLoading(false);
+            return;
+          }
+
+          setIsLoading(true);
+          setError('');
+          try {
+            const userString = await AsyncStorage.getItem('user');
+            const userData = userString ? JSON.parse(userString) : null;
+            const token = userData?.token;
+
+            const channelResponse = await axios.get(
+              `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            setCreatorData(channelResponse.data);
+            setVideos(channelResponse.data.content || []);
+
+            if (userData && token) {
+              const subscriptionResponse = await axios.get(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/subscribe/subscribers`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              const isSubscribed = subscriptionResponse.data.some(
+                (sub) => sub.creatorId === creatorId
+              );
+              setSubscribed(isSubscribed);
+            }
+          } catch (error) {
+            console.error('Error fetching creator data:', error);
+            setError('Failed to load creator data.');
+            Alert.alert('Error', 'Failed to load creator data.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchCreatorData();
+    }, [creatorId, user]);
   
-      const fetchData = async () => {
-        try {
-          const response = await axios.get(`https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`);
-          const filteredData = response.data.filter(content => content.creatorId === creatorId);
-          setData(filteredData);
-        } catch (error) {
-          Alert.alert('Error fetching data', error.message);
-        }
-      };
-  
-      fetchData();
-    }, [creatorId]); 
-  
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#fff" />
+            </View>
+        );
+    }
+
     if (!creatorId) {
       return (
         <View style={styles.errorContainer}>
@@ -55,7 +417,7 @@ export default function CreatorChannel() {
   
     <ScrollView style={styles.container}>
       <View style={styles.bannerContainer}>
-        <Image source={{ uri: creator.bannerImage }} style={styles.bannerImage} />
+        <Image source={{ uri: creatorData?.bannerImage }} style={styles.bannerImage} />
         <View style={styles.shareIcons}>
           <Pressable>
             <FontAwesome name="facebook" size={24} color="white" />
@@ -76,10 +438,10 @@ export default function CreatorChannel() {
       </View>
 
       <View style={styles.profileContainer}>
-        <Image source={{ uri: creator.profileImage }} style={styles.profileImage} />
+        <Image source={{ uri: creatorData?.profileImage }} style={styles.profileImage} />
         <View>
-          <Text style={styles.creatorName}>{creator.name}</Text>
-          <Text style={styles.subscriberCount}>{creator.subscribers.length} subscribers</Text>
+          <Text style={styles.creatorName}>{creatorData?.name}</Text>
+          <Text style={styles.subscriberCount}>{creatorData?.subscribers} subscribers</Text>
         </View>
         <Pressable style={styles.subscribeButton} onPress={handleSubscribeClick}>
           <Text style={styles.subscribeText}>{subscribed ? 'Unsubscribe' : 'Subscribe'}</Text>
@@ -88,23 +450,14 @@ export default function CreatorChannel() {
       </View>
 
       <View style={styles.navLinks}>
-        <Text style={styles.navLink}>HOME</Text>
-        <Text style={styles.navLink}>VIDEOS</Text>
-        <Text style={styles.navLink}>PLAYLIST</Text>
-        <Text style={styles.navLink}>COMMUNITY</Text>
-        <Text style={styles.navLink}>ABOUT</Text>
+        <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={styles.navLink}>VIDEOS</Text></Pressable>
+        <Pressable onPress={() => handleTabClick('PLAYLISTS')}><Text style={styles.navLink}>PLAYLIST</Text></Pressable>
+        <Pressable onPress={() => handleTabClick('COMMUNITY')}><Text style={styles.navLink}>COMMUNITY</Text></Pressable>
+        <Pressable onPress={() => handleTabClick('ABOUT')}><Text style={styles.navLink}>ABOUT</Text></Pressable>
       </View>
 
       <View style={styles.contentSection}>
-        <Text style={styles.contentTitle}>Contents</Text>
-        <View style={styles.contentContainer}>
-          {data.map((content) => (
-            <Pressable key={content.id} onPress={() => handleCardClick(content)} style={styles.contentCard}>
-              <Image source={{ uri: content.thumbnail }} style={styles.contentThumbnail} />
-              <Text style={styles.contentTitle}>{content.title}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {renderContent()}
       </View>
     </ScrollView>
   );
@@ -116,6 +469,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
   },
   errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -202,5 +561,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 100,
     borderRadius: 5,
+  },
+  aboutText: {
+    color: 'white',
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  socialIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: 200,
   },
 });

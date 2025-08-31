@@ -6,7 +6,7 @@ const ContentKard = ({ item }) => {
   const navigation = useNavigation();
 
   const handlePress = () => {
-    navigation.navigate('Channel', { creator: item });
+    navigation.navigate('CreatorPage', { creator: item });
   };
 
   return (

@@ -40,7 +40,7 @@ const Diaries = () => {
 
   return (
     <View style={styles.sliderContainer}>
-      <Text style={styles.headerText}>Channel</Text>
+      <Text style={styles.headerText}>Diaries</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}

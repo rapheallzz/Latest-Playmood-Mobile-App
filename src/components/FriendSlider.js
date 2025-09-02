@@ -14,10 +14,8 @@ const FriendSlider = () => {
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
-    if (user && user._id) {
-      dispatch(fetchFriends(user._id));
-    }
-  }, [dispatch, user]);
+    dispatch(fetchFriends());
+  }, [dispatch]);
 
   if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;

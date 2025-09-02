@@ -14,10 +14,8 @@ const LikeSlider = () => {
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
-    if (user && user._id) {
-      dispatch(fetchLikedContent(user._id));
-    }
-  }, [dispatch, user]);
+    dispatch(fetchLikedContent());
+  }, [dispatch]);
 
   if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;

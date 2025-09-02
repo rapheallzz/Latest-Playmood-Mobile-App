@@ -37,19 +37,20 @@ export const likeContent = createAsyncThunk('content/likeContent', async (conten
   }
 });
 
-export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', async (userId, thunkAPI) => {
+export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', async (_, thunkAPI) => {
   try {
-    const response = await contentService.fetchLikedContent(userId);
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchLikedContent(token);
     return response.data.likedContents;
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response.data);
   }
 });
 
-export const fetchFriends = createAsyncThunk('content/fetchFriends', async (userId, thunkAPI) => {
+export const fetchFriends = createAsyncThunk('content/fetchFriends', async (_, thunkAPI) => {
   try {
-    // Assuming a contentService.fetchFriends method exists
-    const response = await contentService.fetchFriends(userId);
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchFriends(token);
     return response.data.friends;
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response.data);

@@ -514,12 +514,12 @@ const styles = StyleSheet.create({
   },
   creatorName: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   subscriberCount: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 11,
   },
   subscribeButton: {
     backgroundColor: '#541011',

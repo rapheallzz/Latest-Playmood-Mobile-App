@@ -59,7 +59,7 @@ export const fetchFavorites = createAsyncThunk('content/fetchFavorites', async (
     try {
       const response = await contentService.fetchWatchlist(userId);
       return response.data.watchlist;
-    } catch (error) => {
+    } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data);
     }
   });

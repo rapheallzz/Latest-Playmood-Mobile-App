@@ -27,10 +27,16 @@ const fetchLikedContent = async (userId) => {
   return response;
 };
 
+const fetchFriends = async (userId) => {
+  const response = await axios.get(`${API_URL}/user/getfriends/${userId}`);
+  return response;
+};
+
 export default {
   fetchContent,
   addToFavorites,
   addToWatchlist,
   likeContent,
   fetchLikedContent,
+  fetchFriends,
 };

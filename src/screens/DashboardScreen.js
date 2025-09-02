@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Text, Image, Pressable, Alert } from 'react-native';
 import MobileHeader from '../components/MobileHeader';
 import LikeSlider from '../components/LikeSlider';
+import ForYouSlider from '../components/ForYouSlider';
+import FriendSlider from '../components/FriendSlider';
 import FavoriteSlider from '../components/FavoriteSlider';
 import WatchlistSlider from '../components/WatchlistSlider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faThumbsUp, faHeart, faUser, faList, faStar, faEye } from '@fortawesome/free-solid-svg-icons';
 import tw from 'tailwind-react-native-classnames'; 
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/authSlice';
 import { useNavigation } from '@react-navigation/native';
 
 export default function Dashboard() {
   const [sliderType, setSliderType] = useState('likes');
+  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -31,6 +34,10 @@ export default function Dashboard() {
         return <FavoriteSlider />;
       case 'watchlist':
         return <WatchlistSlider />;
+      case 'forYou':
+        return <ForYouSlider />;
+      case 'friends':
+        return <FriendSlider />;
       default:
         return <LikeSlider />;
     }
@@ -41,8 +48,8 @@ export default function Dashboard() {
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
         <View style={styles.profileContainer}>
-          <Image source={require('../../assets/images/10.png')} style={styles.profileImage} />
-          <Text style={styles.userName}>Charln</Text>
+          <Image source={{ uri: user?.profileImage }} style={styles.profileImage} />
+          <Text style={styles.userName}>{user?.name}</Text>
           <Text style={styles.changeAccount}>Edit Profile</Text>
           <Pressable style={styles.logOut} onPress={handleLogout}>
             <Text style={styles.buttonText}>Logout</Text>
@@ -71,7 +78,7 @@ export default function Dashboard() {
               <FontAwesomeIcon icon={faStar} style={styles.icon} />
               <Text style={styles.buttonText}>Favorites</Text>
             </Pressable>
-            <Pressable style={styles.subButton}>
+            <Pressable style={styles.subButton} onPress={() => setSliderType('forYou')}>
               <FontAwesomeIcon icon={faUser} style={styles.icon} />
               <Text style={styles.buttonText}>For You</Text>
             </Pressable>
@@ -79,20 +86,15 @@ export default function Dashboard() {
               <FontAwesomeIcon icon={faEye} style={styles.icon} />
               <Text style={styles.buttonText}>Watchlist</Text>
             </Pressable>
+            <Pressable style={styles.subButton} onPress={() => setSliderType('friends')}>
+              <FontAwesomeIcon icon={faUser} style={styles.icon} />
+              <Text style={styles.buttonText}>Friends</Text>
+            </Pressable>
           </View>
 
           <View style={styles.dashSlider}>
             {renderSlider()}
           </View>
-        </View>
-
-        <View>
-          <View style={styles.dashButton}>
-            <Text style={styles.slideText}>Donation | </Text>
-            <Text style={styles.slideText}>Subscription | </Text>
-            <Text style={styles.slideText}>Friends</Text>
-          </View>
-          {/* <FriendSlider data={Friendslider} /> */}
         </View>
 
         <View style={styles.boxHolder}>

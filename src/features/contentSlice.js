@@ -46,6 +46,33 @@ export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', a
   }
 });
 
+export const fetchFavorites = createAsyncThunk('content/fetchFavorites', async (userId, thunkAPI) => {
+    try {
+      const response = await contentService.fetchFavorites(userId);
+      return response.data.favorites;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data);
+    }
+  });
+
+  export const fetchWatchlist = createAsyncThunk('content/fetchWatchlist', async (userId, thunkAPI) => {
+    try {
+      const response = await contentService.fetchWatchlist(userId);
+      return response.data.watchlist;
+    } catch (error) => {
+      return thunkAPI.rejectWithValue(error.response.data);
+    }
+  });
+
+export const fetchFriends = createAsyncThunk('content/fetchFriends', async (userId, thunkAPI) => {
+    try {
+        const response = await contentService.fetchFriends(userId);
+        return response.data.friends;
+    } catch (error) {
+        return thunkAPI.rejectWithValue(error.response.data);
+    }
+});
+
 const contentSlice = createSlice({
   name: 'content',
   initialState: {
@@ -53,9 +80,19 @@ const contentSlice = createSlice({
     favorites: [],
     watchlist: [],
     likes: [],
+    friends: [],
     isLoading: false,
     isError: false,
     message: '',
+  },
+  reducers: {
+    clearContentCache: (state) => {
+      state.contentList = [];
+      state.favorites = [];
+      state.watchlist = [];
+      state.likes = [];
+      state.friends = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -118,8 +155,45 @@ const contentSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+      .addCase(fetchFavorites.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchFavorites.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.favorites = action.payload;
+      })
+      .addCase(fetchFavorites.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchWatchlist.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchWatchlist.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.watchlist = action.payload;
+      })
+      .addCase(fetchWatchlist.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchFriends.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchFriends.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.friends = action.payload;
+      })
+      .addCase(fetchFriends.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       });
   },
 });
 
+export const { clearContentCache } = contentSlice.actions;
 export default contentSlice.reducer;

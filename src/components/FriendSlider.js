@@ -1,45 +1,44 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchLikedContent } from '../features/contentSlice';
-
+import { fetchFriends } from '../features/contentSlice';
+import FriendCard from './FriendCard';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const LikeSlider = () => {
+const FriendSlider = () => {
   const dispatch = useDispatch();
-  const { likes, isLoading, isError, message } = useSelector(state => state.content);
+  const { friends, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
     if (user && user._id) {
-      dispatch(fetchLikedContent(user._id));
+      dispatch(fetchFriends(user._id));
     }
   }, [dispatch, user]);
 
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#fff" />;
+  }
+
   return (
     <View style={styles.sliderContainer}>
-      {isLoading ? (
-        <Text style={styles.message}>Loading...</Text>
-      ) : isError ? (
+      {isError ? (
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-        data={likes}
-        renderItem={({ item, index }) => (
-          <View style={styles.itemContainer}>
-            <ContentCard item={item} />
-          </View>
-        )}
-        width={screenWidth}
-        height={500}
-        loop={true}
-        autoPlay={true}
-        autoPlayInterval={3000}
-        style={styles.carousel}
-      />
+          data={friends}
+          renderItem={({ item, index }) => (
+            <FriendCard friend={item} />
+          )}
+          width={screenWidth}
+          height={120}
+          loop={true}
+          autoPlay={true}
+          autoPlayInterval={3000}
+          style={styles.carousel}
+        />
       )}
     </View>
   );
@@ -47,33 +46,7 @@ const LikeSlider = () => {
 
 const styles = StyleSheet.create({
   sliderContainer: {
-    height: 350,
-  },
-  headerText: {
-    color: 'white',
-    fontSize: 20,
-    marginLeft: 20,
-    marginTop: 12,
-    marginBottom:5,
-
-  },
-  itemContainer: {
-    alignItems: 'center',
-    height:600,
-  },
-  numberingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 30,
-    height: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 25,
-    marginBottom: 5,
-  },
-  numberingText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: 'black',
+    height: 120,
   },
   carousel: {
     paddingLeft: 15,
@@ -87,4 +60,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LikeSlider;
+export default FriendSlider;

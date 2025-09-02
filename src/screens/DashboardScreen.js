@@ -4,23 +4,41 @@ import MobileHeader from '../components/MobileHeader';
 import LikeSlider from '../components/LikeSlider';
 import FavoriteSlider from '../components/FavoriteSlider';
 import WatchlistSlider from '../components/WatchlistSlider';
+import FriendSlider from '../components/FriendSlider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faThumbsUp, faHeart, faUser, faList, faStar, faEye } from '@fortawesome/free-solid-svg-icons';
 import tw from 'tailwind-react-native-classnames'; 
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/authSlice';
+import { clearContentCache } from '../features/contentSlice';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Dashboard() {
   const [sliderType, setSliderType] = useState('likes');
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const { user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
     dispatch(logout()).then(() => {
       navigation.navigate('Home');
       console.log('logout success');
     });
+  };
+
+  const handleManageCookies = async () => {
+    try {
+      await AsyncStorage.removeItem('user');
+      Alert.alert('Success', 'Cookies have been cleared.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to clear cookies.');
+    }
+  };
+
+  const handleRemoveCache = () => {
+    dispatch(clearContentCache());
+    Alert.alert('Success', 'Cache has been cleared.');
   };
 
   const renderSlider = () => {
@@ -42,7 +60,7 @@ export default function Dashboard() {
       <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
         <View style={styles.profileContainer}>
           <Image source={require('../../assets/images/10.png')} style={styles.profileImage} />
-          <Text style={styles.userName}>Charln</Text>
+          <Text style={styles.userName}>{user ? user.name : 'Guest'}</Text>
           <Text style={styles.changeAccount}>Edit Profile</Text>
           <Pressable style={styles.logOut} onPress={handleLogout}>
             <Text style={styles.buttonText}>Logout</Text>
@@ -88,23 +106,27 @@ export default function Dashboard() {
 
         <View>
           <View style={styles.dashButton}>
-            <Text style={styles.slideText}>Donation | </Text>
-            <Text style={styles.slideText}>Subscription | </Text>
+            <Pressable onPress={() => navigation.navigate('Donation')}>
+              <Text style={styles.slideText}>Donation | </Text>
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('Subscription')}>
+              <Text style={styles.slideText}>Subscription | </Text>
+            </Pressable>
             <Text style={styles.slideText}>Friends</Text>
           </View>
-          {/* <FriendSlider data={Friendslider} /> */}
+          <FriendSlider />
         </View>
 
         <View style={styles.boxHolder}>
-          <View style={styles.boxText}>
+          <Pressable style={styles.boxText} onPress={() => navigation.navigate('Activities')}>
             <Text style={styles.slideText}>Activities</Text>
-          </View>
-          <View style={styles.boxText}>
+          </Pressable>
+          <Pressable style={styles.boxText} onPress={handleManageCookies}>
             <Text style={styles.slideText}>Manage Cookies</Text>
-          </View>
-          <View style={styles.boxText}>
+          </Pressable>
+          <Pressable style={styles.boxText} onPress={handleRemoveCache}>
             <Text style={styles.slideText}>Remove Cache</Text>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
@@ -158,19 +180,18 @@ const styles = StyleSheet.create({
   dashButton: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'evenly',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    paddingLeft: 35,
     marginTop: 35,
   },
   subButton: {
-    width: 70,
+    flex: 1,
     height: 40,
     backgroundColor: '#541011',
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 5,
-    marginRight: 5,
+    marginHorizontal: 5,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -193,18 +214,20 @@ const styles = StyleSheet.create({
   },
   boxHolder: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
     marginTop: 30,
-    gap: 10,
   },
   boxText: {
+    flex: 1,
     alignItems: 'center',
-    width: 150,
     height: 70,
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: 'white',
     justifyContent: 'center',
+    marginHorizontal: 10,
   },
   adminButtons: {
     marginTop: 20,

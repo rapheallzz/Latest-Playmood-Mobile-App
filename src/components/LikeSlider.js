@@ -12,7 +12,6 @@ const LikeSlider = () => {
   const dispatch = useDispatch();
   const { likes, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user && user._id) {
@@ -20,16 +19,14 @@ const LikeSlider = () => {
     }
   }, [dispatch, user]);
 
-  if (loading) {
+  if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;
   }
 
 
   return (
     <View style={styles.sliderContainer}>
-      {isLoading ? (
-        <Text style={styles.message}>Loading...</Text>
-      ) : isError ? (
+      {isError ? (
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel

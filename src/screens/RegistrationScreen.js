@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Pressable, Text, Image, ScrollView } from 'react-native';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { register, registerStart, registerSuccess, registerFailure } from '../features/authSlice';
+import { register, reset } from '../features/authSlice';
 
 export default function RegistrationScreen() {
   const [name, setName] = useState('');
@@ -13,14 +13,15 @@ export default function RegistrationScreen() {
   const navigation = useNavigation();
   const { isLoading, isError, isSuccess, message } = useSelector(state => state.auth);
 
-  const handleRegister = async () => {
-    dispatch(registerStart());
-    try {
-      await dispatch(register(name, email, password)); // Updated to pass name, email, and password
+  useEffect(() => {
+    if (isSuccess) {
       navigation.navigate('Home');
-    } catch (error) {
-      console.log('Registration error:', error);
+      dispatch(reset());
     }
+  }, [isSuccess, navigation, dispatch]);
+
+  const handleRegister = () => {
+    dispatch(register({ name, email, password }));
   };
 
   return (

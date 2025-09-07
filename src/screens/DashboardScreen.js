@@ -56,17 +56,30 @@ export default function Dashboard() {
           </Pressable>
         </View>
 
-        <View style={styles.adminButtons}>
-          <Pressable style={styles.adminButton} onPress={() => navigation.navigate('AdminPage')}>
-            <Text style={styles.buttonText}>Admin Page</Text>
-          </Pressable>
-          <Pressable style={styles.adminButton} onPress={() => navigation.navigate('ApplyAsCreator')}>
-            <Text style={styles.buttonText}>Apply as a Creator</Text>
-          </Pressable>
-          <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
-            <Text style={styles.buttonText}>Post a Video for Review</Text>
-          </Pressable>
-        </View>
+        {user?.role === 'admin' && (
+          <View style={styles.adminButtons}>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('AdminPage')}>
+              <Text style={styles.buttonText}>Admin Page</Text>
+            </Pressable>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('ApplyAsCreator')}>
+              <Text style={styles.buttonText}>Apply as a Creator</Text>
+            </Pressable>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
+              <Text style={styles.buttonText}>Post a Video for Review</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {user?.role === 'creator' && (
+          <View style={styles.adminButtons}>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('CreatorPage')}>
+              <Text style={styles.buttonText}>Visit Channel</Text>
+            </Pressable>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
+              <Text style={styles.buttonText}>Upload a content for review</Text>
+            </Pressable>
+          </View>
+        )}
 
         <View>
           <View style={styles.dashButton}>
@@ -97,20 +110,21 @@ export default function Dashboard() {
           </View>
         </View>
 
-        <View style={styles.boxHolder}>
-          <View style={styles.boxText}>
-            <FontAwesomeIcon icon={faHistory} style={styles.iconStyle} />
-            <Text style={styles.boxInnerText}>Activities</Text>
+          <View style={styles.boxHolder}>
+            <View style={styles.boxText}>
+              <FontAwesomeIcon icon={faHistory} style={styles.iconStyle} />
+              <Text style={styles.boxInnerText}>Activities</Text>
+            </View>
+            <View style={styles.boxText}>
+              <FontAwesomeIcon icon={faCookieBite} style={styles.iconStyle} />
+              <Text style={styles.boxInnerText}>Manage Cookies</Text>
+            </View>
+            <View style={styles.boxText}>
+              <FontAwesomeIcon icon={faTrash} style={styles.iconStyle} />
+              <Text style={styles.boxInnerText}>Remove Cache</Text>
+            </View>
           </View>
-          <View style={styles.boxText}>
-            <FontAwesomeIcon icon={faCookieBite} style={styles.iconStyle} />
-            <Text style={styles.boxInnerText}>Manage Cookies</Text>
-          </View>
-          <View style={styles.boxText}>
-            <FontAwesomeIcon icon={faTrash} style={styles.iconStyle} />
-            <Text style={styles.boxInnerText}>Remove Cache</Text>
-          </View>
-        </View>
+   
       </ScrollView>
     </View>
   );

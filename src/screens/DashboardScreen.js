@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'evenly',
     alignItems: 'center',
-    paddingLeft: 35,
+    paddingLeft: 10,
     marginTop: 35,
   },
   subButton: {

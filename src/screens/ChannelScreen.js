@@ -704,7 +704,7 @@ export default function CreatorChannel() {
 
 const styles = StyleSheet.create({
   actionButton: {
-    backgroundColor: '#333',
+    backgroundColor: '#541011',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   creatorActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: 20,
+    paddingHorizontal: 2,
     paddingBottom: 20,
   },
   container: {

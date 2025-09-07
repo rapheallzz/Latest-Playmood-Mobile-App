@@ -6,6 +6,7 @@ import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { FacebookShareButton, TwitterShareButton, WhatsappShareButton, LinkedinShareButton } from 'react-share';
+import EditChannelModal from '../components/EditChannelModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../features/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,10 +15,12 @@ export default function CreatorChannel() {
     const navigation = useNavigation();
     const route = useRoute();
     const dispatch = useDispatch();
-    const user = useSelector(state => state.user);
+    const { user: loggedInUser } = useSelector((state) => state.auth);
     
     const { creator } = route.params || {};
     const creatorId = creator?._id;
+
+    const isOwner = loggedInUser?._id === creatorId;
     
     const [subscribed, setSubscribed] = useState(false);
     const [spank, setSpank] = useState(false);
@@ -31,6 +34,15 @@ export default function CreatorChannel() {
     const [error, setError] = useState('');
     const [newComment, setNewComment] = useState({});
     const [activeTab, setActiveTab] = useState('VIDEOS');
+
+    // State for Edit Channel Modal
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [name, setName] = useState('');
+    const [about, setAbout] = useState('');
+    const [instagram, setInstagram] = useState('');
+    const [tiktok, setTiktok] = useState('');
+    const [linkedin, setLinkedin] = useState('');
+    const [twitter, setTwitter] = useState('');
 
     const fetchPlaylists = async () => {
         if (!creatorId) {
@@ -98,6 +110,67 @@ export default function CreatorChannel() {
         } finally {
             setIsLoadingPosts(false);
         }
+    };
+
+    const handleUpdateChannelInfo = async () => {
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to update your channel.');
+            return;
+        }
+
+        const payload = {
+            name,
+            about,
+            socials: {
+                instagram,
+                tiktok,
+                linkedin,
+                twitter,
+            },
+        };
+
+        try {
+            const token = userData.token;
+            await axios.put(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
+                payload,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            // Optimistically update the UI
+            setCreatorData(prev => ({
+                ...prev,
+                name: payload.name,
+                about: payload.about,
+                socials: payload.socials,
+                instagram: payload.socials.instagram,
+                tiktok: payload.socials.tiktok,
+                linkedin: payload.socials.linkedin,
+                twitter: payload.socials.twitter,
+            }));
+
+            Alert.alert('Success', 'Channel information updated successfully!');
+            setShowEditModal(false);
+
+        } catch (err) {
+            console.error('Error updating channel info:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to update channel information.');
+        }
+    };
+
+    const handleOpenEditModal = () => {
+        setName(creatorData?.name || '');
+        setAbout(creatorData?.about || '');
+        // Assuming social links are nested as they are in the web app
+        setInstagram(creatorData?.socials?.instagram || creatorData?.instagram || '');
+        setTiktok(creatorData?.socials?.tiktok || creatorData?.tiktok || '');
+        setLinkedin(creatorData?.socials?.linkedin || creatorData?.linkedin || '');
+        setTwitter(creatorData?.socials?.twitter || creatorData?.twitter || '');
+        setShowEditModal(true);
     };
 
     const handleTabClick = (tab) => {
@@ -443,11 +516,32 @@ export default function CreatorChannel() {
           <Text style={styles.creatorName}>{creatorData?.name}</Text>
           <Text style={styles.subscriberCount}>{creatorData?.subscribers} subscribers</Text>
         </View>
-        <Pressable style={styles.subscribeButton} onPress={handleSubscribeClick}>
-          <Text style={styles.subscribeText}>{subscribed ? 'Unsubscribe' : 'Subscribe'}</Text>
-        </Pressable>
-        <FontAwesome name="bell" size={24} color="white" />
+        {!isOwner && (
+          <>
+            <Pressable style={styles.subscribeButton} onPress={handleSubscribeClick}>
+              <Text style={styles.subscribeText}>{subscribed ? 'Unsubscribe' : 'Subscribe'}</Text>
+            </Pressable>
+            <FontAwesome name="bell" size={24} color="white" />
+          </>
+        )}
       </View>
+
+      {isOwner && (
+        <View style={styles.creatorActions}>
+          <Pressable style={styles.actionButton} onPress={() => Alert.alert('TODO: Create Playlist Modal')}>
+            <Text style={styles.actionButtonText}>New Playlist</Text>
+          </Pressable>
+          <Pressable style={styles.actionButton} onPress={() => Alert.alert('TODO: Create Post Modal')}>
+            <Text style={styles.actionButtonText}>New Post</Text>
+          </Pressable>
+          <Pressable style={styles.actionButton} onPress={() => Alert.alert('TODO: Upload Video Modal')}>
+            <Text style={styles.actionButtonText}>Upload Video</Text>
+          </Pressable>
+          <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
+            <Text style={styles.actionButtonText}>Edit Channel</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.navLinks}>
         <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={styles.navLink}>VIDEOS</Text></Pressable>
@@ -459,11 +553,47 @@ export default function CreatorChannel() {
       <View style={styles.contentSection}>
         {renderContent()}
       </View>
+
+      {isOwner && (
+        <EditChannelModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          creatorName={name}
+          setCreatorName={setName}
+          about={about}
+          setAbout={setAbout}
+          instagram={instagram}
+          setInstagram={setInstagram}
+          tiktok={tiktok}
+          setTiktok={setTiktok}
+          linkedin={linkedin}
+          setLinkedin={setLinkedin}
+          twitter={twitter}
+          setTwitter={setTwitter}
+          handleUpdateChannelInfo={handleUpdateChannelInfo}
+        />
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  actionButton: {
+    backgroundColor: '#333',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  creatorActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
   container: {
     flex: 1,
     backgroundColor: 'black',

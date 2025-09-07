@@ -83,7 +83,7 @@ export default function Dashboard() {
 
         {user?.role === 'creator' && (
           <View style={styles.adminButtons}>
-            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('CreatorPage')}>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('CreatorPage', { creator: user })}>
               <Text style={styles.buttonText}>Visit Channel</Text>
             </Pressable>
             <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>

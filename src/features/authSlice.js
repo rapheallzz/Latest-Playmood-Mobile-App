@@ -66,10 +66,10 @@ const authSlice = createSlice({
       .addCase(register.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(register.fulfilled, (state, action) => {
+       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
         state.userToken = action.payload.token;
       })
       .addCase(register.rejected, (state, action) => {
@@ -81,10 +81,10 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(login.fulfilled, (state, action) => {
+       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
         state.userToken = action.payload.token;
       })
       .addCase(login.rejected, (state, action) => {

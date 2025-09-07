@@ -7,7 +7,7 @@ import FriendSlider from '../components/FriendSlider';
 import FavoriteSlider from '../components/FavoriteSlider';
 import WatchlistSlider from '../components/WatchlistSlider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faHistory, faCookieBite, faTrash } from '@fortawesome/free-solid-svg-icons';
 import tw from 'tailwind-react-native-classnames'; 
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/authSlice';
@@ -99,13 +99,16 @@ export default function Dashboard() {
 
         <View style={styles.boxHolder}>
           <View style={styles.boxText}>
-            <Text style={styles.slideText}>Activities</Text>
+            <FontAwesomeIcon icon={faHistory} style={styles.iconStyle} />
+            <Text style={styles.boxInnerText}>Activities</Text>
           </View>
           <View style={styles.boxText}>
-            <Text style={styles.slideText}>Manage Cookies</Text>
+            <FontAwesomeIcon icon={faCookieBite} style={styles.iconStyle} />
+            <Text style={styles.boxInnerText}>Manage Cookies</Text>
           </View>
           <View style={styles.boxText}>
-            <Text style={styles.slideText}>Remove Cache</Text>
+            <FontAwesomeIcon icon={faTrash} style={styles.iconStyle} />
+            <Text style={styles.boxInnerText}>Remove Cache</Text>
           </View>
         </View>
       </ScrollView>
@@ -114,6 +117,11 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
+  boxInnerText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.70)',
@@ -127,6 +135,9 @@ const styles = StyleSheet.create({
     color: 'white',
     width: 5,
     height: 2,
+  },
+  iconStyle: {
+    color: 'white',
   },
   profileContainer: {
     alignItems: 'center',
@@ -200,13 +211,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   boxText: {
+    flexDirection: 'row',
     alignItems: 'center',
-    width: 150,
-    height: 70,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: 'white',
     justifyContent: 'center',
+    width: 200,
+    height: 60,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 10,
+    backgroundColor: '#1A1A1A',
+    gap: 10,
   },
   adminButtons: {
     marginTop: 20,

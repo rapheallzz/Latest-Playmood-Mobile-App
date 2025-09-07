@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState = {
   user: null,
+  userToken: null,
   isError: false,
   isSuccess: false,
   isLoading: false,
@@ -68,7 +69,8 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.userToken = action.payload.token;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -82,7 +84,8 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.userToken = action.payload.token;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -92,6 +95,7 @@ const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
+        state.userToken = null;
       });
   },
 });

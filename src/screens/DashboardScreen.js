@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Text, Image, Pressable, Alert } from 'react-native';
 import MobileHeader from '../components/MobileHeader';
 import LikeSlider from '../components/LikeSlider';
+import ForYouSlider from '../components/ForYouSlider';
+import FriendSlider from '../components/FriendSlider';
 import FavoriteSlider from '../components/FavoriteSlider';
 import WatchlistSlider from '../components/WatchlistSlider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faHistory, faCookieBite, faTrash } from '@fortawesome/free-solid-svg-icons';
 import tw from 'tailwind-react-native-classnames'; 
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/authSlice';
 import { useNavigation } from '@react-navigation/native';
 
 export default function Dashboard() {
   const [sliderType, setSliderType] = useState('likes');
+  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -31,6 +34,10 @@ export default function Dashboard() {
         return <FavoriteSlider />;
       case 'watchlist':
         return <WatchlistSlider />;
+      case 'forYou':
+        return <ForYouSlider />;
+      case 'friends':
+        return <FriendSlider />;
       default:
         return <LikeSlider />;
     }
@@ -41,25 +48,27 @@ export default function Dashboard() {
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
         <View style={styles.profileContainer}>
-          <Image source={require('../../assets/images/10.png')} style={styles.profileImage} />
-          <Text style={styles.userName}>Charln</Text>
+          <Image source={{ uri: user?.profileImage }} style={styles.profileImage} />
+          <Text style={styles.userName}>{user?.name}</Text>
           <Text style={styles.changeAccount}>Edit Profile</Text>
           <Pressable style={styles.logOut} onPress={handleLogout}>
             <Text style={styles.buttonText}>Logout</Text>
           </Pressable>
         </View>
 
-        <View style={styles.adminButtons}>
-          <Pressable style={styles.adminButton} onPress={() => navigation.navigate('AdminPage')}>
-            <Text style={styles.buttonText}>Admin Page</Text>
-          </Pressable>
-          <Pressable style={styles.adminButton} onPress={() => navigation.navigate('ApplyAsCreator')}>
-            <Text style={styles.buttonText}>Apply as a Creator</Text>
-          </Pressable>
-          <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
-            <Text style={styles.buttonText}>Post a Video for Review</Text>
-          </Pressable>
-        </View>
+        {user?.role === 'admin' && (
+          <View style={styles.adminButtons}>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('AdminPage')}>
+              <Text style={styles.buttonText}>Admin Page</Text>
+            </Pressable>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('ApplyAsCreator')}>
+              <Text style={styles.buttonText}>Apply as a Creator</Text>
+            </Pressable>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
+              <Text style={styles.buttonText}>Post a Video for Review</Text>
+            </Pressable>
+          </View>
+        )}
 
         <View>
           <View style={styles.dashButton}>
@@ -71,13 +80,17 @@ export default function Dashboard() {
               <FontAwesomeIcon icon={faStar} style={styles.icon} />
               <Text style={styles.buttonText}>Favorites</Text>
             </Pressable>
-            <Pressable style={styles.subButton}>
+            <Pressable style={styles.subButton} onPress={() => setSliderType('forYou')}>
               <FontAwesomeIcon icon={faUser} style={styles.icon} />
               <Text style={styles.buttonText}>For You</Text>
             </Pressable>
             <Pressable style={styles.subButton} onPress={() => setSliderType('watchlist')}>
               <FontAwesomeIcon icon={faEye} style={styles.icon} />
               <Text style={styles.buttonText}>Watchlist</Text>
+            </Pressable>
+            <Pressable style={styles.subButton} onPress={() => setSliderType('friends')}>
+              <FontAwesomeIcon icon={faUser} style={styles.icon} />
+              <Text style={styles.buttonText}>Friends</Text>
             </Pressable>
           </View>
 
@@ -86,32 +99,33 @@ export default function Dashboard() {
           </View>
         </View>
 
-        <View>
-          <View style={styles.dashButton}>
-            <Text style={styles.slideText}>Donation | </Text>
-            <Text style={styles.slideText}>Subscription | </Text>
-            <Text style={styles.slideText}>Friends</Text>
+        {user?.role === 'admin' && (
+          <View style={styles.boxHolder}>
+            <View style={styles.boxText}>
+              <FontAwesomeIcon icon={faHistory} style={styles.iconStyle} />
+              <Text style={styles.boxInnerText}>Activities</Text>
+            </View>
+            <View style={styles.boxText}>
+              <FontAwesomeIcon icon={faCookieBite} style={styles.iconStyle} />
+              <Text style={styles.boxInnerText}>Manage Cookies</Text>
+            </View>
+            <View style={styles.boxText}>
+              <FontAwesomeIcon icon={faTrash} style={styles.iconStyle} />
+              <Text style={styles.boxInnerText}>Remove Cache</Text>
+            </View>
           </View>
-          {/* <FriendSlider data={Friendslider} /> */}
-        </View>
-
-        <View style={styles.boxHolder}>
-          <View style={styles.boxText}>
-            <Text style={styles.slideText}>Activities</Text>
-          </View>
-          <View style={styles.boxText}>
-            <Text style={styles.slideText}>Manage Cookies</Text>
-          </View>
-          <View style={styles.boxText}>
-            <Text style={styles.slideText}>Remove Cache</Text>
-          </View>
-        </View>
+        )}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  boxInnerText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.70)',
@@ -125,6 +139,9 @@ const styles = StyleSheet.create({
     color: 'white',
     width: 5,
     height: 2,
+  },
+  iconStyle: {
+    color: 'white',
   },
   profileContainer: {
     alignItems: 'center',
@@ -198,13 +215,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   boxText: {
+    flexDirection: 'row',
     alignItems: 'center',
-    width: 150,
-    height: 70,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: 'white',
     justifyContent: 'center',
+    width: 200,
+    height: 60,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 10,
+    backgroundColor: '#1A1A1A',
+    gap: 10,
   },
   adminButtons: {
     marginTop: 20,

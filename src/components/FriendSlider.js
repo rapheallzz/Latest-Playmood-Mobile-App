@@ -1,23 +1,26 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchLikedContent } from '../features/contentSlice';
+import { fetchFriends } from '../features/contentSlice';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const LikeSlider = () => {
+const FriendSlider = () => {
   const dispatch = useDispatch();
-  const { likes, isLoading, isError, message } = useSelector(state => state.content);
+  const { friends, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
-    if (user && user._id) {
-      dispatch(fetchLikedContent(user._id));
-    }
-  }, [dispatch, user]);
+    dispatch(fetchFriends());
+  }, [dispatch]);
+
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#fff" />;
+  }
+
 
   return (
     <View style={styles.sliderContainer}>
@@ -27,7 +30,7 @@ const LikeSlider = () => {
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-        data={likes}
+        data={friends}
         renderItem={({ item, index }) => (
           <View style={styles.itemContainer}>
             <ContentCard item={item} />
@@ -87,4 +90,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LikeSlider;
+export default FriendSlider;

@@ -37,10 +37,21 @@ export const likeContent = createAsyncThunk('content/likeContent', async (conten
   }
 });
 
-export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', async (userId, thunkAPI) => {
+export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', async (_, thunkAPI) => {
   try {
-    const response = await contentService.fetchLikedContent(userId);
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchLikedContent(token);
     return response.data.likedContents;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response.data);
+  }
+});
+
+export const fetchFriends = createAsyncThunk('content/fetchFriends', async (_, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchFriends(token);
+    return response.data.friends;
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response.data);
   }
@@ -53,6 +64,7 @@ const contentSlice = createSlice({
     favorites: [],
     watchlist: [],
     likes: [],
+    friends: [],
     isLoading: false,
     isError: false,
     message: '',
@@ -115,6 +127,18 @@ const contentSlice = createSlice({
         state.likes = action.payload;
       })
       .addCase(fetchLikedContent.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchFriends.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchFriends.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.friends = action.payload;
+      })
+      .addCase(fetchFriends.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;

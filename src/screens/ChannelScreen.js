@@ -7,6 +7,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { FacebookShareButton, TwitterShareButton, WhatsappShareButton, LinkedinShareButton } from 'react-share';
 import EditChannelModal from '../components/EditChannelModal';
+import CommunityPostModal from '../components/CommunityPostModal';
+import CreatePlaylistModal from '../components/CreatePlaylistModal';
+import UploadVideoModal from '../components/UploadVideoModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../features/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -43,6 +46,20 @@ export default function CreatorChannel() {
     const [tiktok, setTiktok] = useState('');
     const [linkedin, setLinkedin] = useState('');
     const [twitter, setTwitter] = useState('');
+
+    // State for Community Post Modal
+    const [showCommunityModal, setShowCommunityModal] = useState(false);
+    const [newPostContent, setNewPostContent] = useState('');
+
+    // State for Playlist Modal
+    const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+    const [newPlaylist, setNewPlaylist] = useState({ name: '', description: '', visibility: 'public' });
+
+    // State for Banner Image
+    const [bannerImageFile, setBannerImageFile] = useState(null);
+
+    // State for Upload Video Modal
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const fetchPlaylists = async () => {
         if (!creatorId) {
@@ -120,45 +137,200 @@ export default function CreatorChannel() {
             return;
         }
 
-        const payload = {
-            name,
-            about,
-            socials: {
-                instagram,
-                tiktok,
-                linkedin,
-                twitter,
-            },
-        };
+        const token = userData.token;
+        let response;
+
+        try {
+            if (bannerImageFile) {
+                // If there's a new banner, use FormData
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('about', about);
+                // Socials might need to be stringified if the backend expects it with FormData
+                formData.append('socials', JSON.stringify({ instagram, tiktok, linkedin, twitter }));
+
+                const uriParts = bannerImageFile.uri.split('.');
+                const fileType = uriParts[uriParts.length - 1];
+                formData.append('bannerImage', {
+                    uri: bannerImageFile.uri,
+                    name: bannerImageFile.fileName || `banner.${fileType}`,
+                    type: `${bannerImageFile.type}/${fileType}`,
+                });
+
+                response = await axios.put(
+                    `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data',
+                        },
+                        transformRequest: (data, headers) => {
+                            return formData; // Axios workaround
+                        },
+                    }
+                );
+            } else {
+                // If no new banner, send as JSON
+                const payload = {
+                    name,
+                    about,
+                    socials: { instagram, tiktok, linkedin, twitter },
+                };
+                response = await axios.put(
+                    `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
+                    payload,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+            }
+
+            // Update state with the response data
+            setCreatorData(response.data.channel);
+            setBannerImageFile(null); // Reset the file state
+            setShowEditModal(false);
+            Alert.alert('Success', 'Channel information updated successfully!');
+
+        } catch (err) {
+            console.error('Error updating channel info:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to update channel information.');
+        }
+    };
+
+    const handleCreatePost = async () => {
+        if (!newPostContent.trim()) {
+            Alert.alert('Error', 'Post content cannot be empty.');
+            return;
+        }
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to post.');
+            return;
+        }
 
         try {
             const token = userData.token;
-            await axios.put(
-                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
-                payload,
+            const response = await axios.post(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/community`,
+                { content: newPostContent },
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
 
-            // Optimistically update the UI
-            setCreatorData(prev => ({
-                ...prev,
-                name: payload.name,
-                about: payload.about,
-                socials: payload.socials,
-                instagram: payload.socials.instagram,
-                tiktok: payload.socials.tiktok,
-                linkedin: payload.socials.linkedin,
-                twitter: payload.socials.twitter,
-            }));
-
-            Alert.alert('Success', 'Channel information updated successfully!');
-            setShowEditModal(false);
+            // Add the new post to the start of the list
+            setCommunityPosts(prev => [response.data, ...prev]);
+            setNewPostContent('');
+            setShowCommunityModal(false);
+            Alert.alert('Success', 'Community post created successfully!');
 
         } catch (err) {
-            console.error('Error updating channel info:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to update channel information.');
+            console.error('Error creating community post:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to create community post.');
+        }
+    };
+
+    const handleCreatePlaylist = async () => {
+        if (!newPlaylist.name.trim()) {
+            Alert.alert('Error', 'Playlist name cannot be empty.');
+            return;
+        }
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to create a playlist.');
+            return;
+        }
+
+        try {
+            const token = userData.token;
+            const response = await axios.post(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/playlists`,
+                { ...newPlaylist, videos: [] }, // Send videos as empty array
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            setPlaylists(prev => [response.data.playlist, ...prev]);
+            setNewPlaylist({ name: '', description: '', visibility: 'public' });
+            setShowPlaylistModal(false);
+            Alert.alert('Success', 'Playlist created successfully!');
+
+        } catch (err) {
+            console.error('Error creating playlist:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to create playlist.');
+        }
+    };
+
+    const handleUpload = async (videoData) => {
+        const { title, description, credit, category, assets, previewStart, previewEnd } = videoData;
+
+        if (!title.trim() || !description.trim()) {
+            Alert.alert('Error', 'Title and description are required.');
+            return;
+        }
+        if (!assets || assets.length === 0) {
+            Alert.alert('Error', 'Please select at least one file to upload.');
+            return;
+        }
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to upload a video.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('credit', credit);
+        formData.append('category', category);
+        formData.append('userId', loggedInUser._id);
+        formData.append('previewStart', previewStart);
+        formData.append('previewEnd', previewEnd);
+
+        assets.forEach(asset => {
+            const uriParts = asset.uri.split('.');
+            const fileType = uriParts[uriParts.length - 1];
+
+            formData.append('files', {
+                uri: asset.uri,
+                name: asset.fileName || `upload.${fileType}`,
+                type: `${asset.type}/${fileType}`,
+            });
+        });
+
+        try {
+            const token = userData.token;
+            // TODO: Add progress tracking
+            const response = await axios.post(
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    transformRequest: (data, headers) => {
+                        return formData; // Axios workaround
+                    },
+                }
+            );
+
+            // Add new video to the list (or refetch)
+            setVideos(prev => [response.data.content, ...prev]);
+            setShowUploadModal(false);
+            Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
+
+        } catch (err) {
+            console.error('Error uploading video:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to upload video.');
         }
     };
 
@@ -528,13 +700,13 @@ export default function CreatorChannel() {
 
       {isOwner && (
         <View style={styles.creatorActions}>
-          <Pressable style={styles.actionButton} onPress={() => Alert.alert('TODO: Create Playlist Modal')}>
+          <Pressable style={styles.actionButton} onPress={() => setShowPlaylistModal(true)}>
             <Text style={styles.actionButtonText}>New Playlist</Text>
           </Pressable>
-          <Pressable style={styles.actionButton} onPress={() => Alert.alert('TODO: Create Post Modal')}>
+          <Pressable style={styles.actionButton} onPress={() => setShowCommunityModal(true)}>
             <Text style={styles.actionButtonText}>New Post</Text>
           </Pressable>
-          <Pressable style={styles.actionButton} onPress={() => Alert.alert('TODO: Upload Video Modal')}>
+          <Pressable style={styles.actionButton} onPress={() => setShowUploadModal(true)}>
             <Text style={styles.actionButtonText}>Upload Video</Text>
           </Pressable>
           <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
@@ -570,7 +742,37 @@ export default function CreatorChannel() {
           setLinkedin={setLinkedin}
           twitter={twitter}
           setTwitter={setTwitter}
+          bannerImage={bannerImageFile?.uri || creatorData?.bannerImage}
+          setBannerImageFile={setBannerImageFile}
           handleUpdateChannelInfo={handleUpdateChannelInfo}
+        />
+      )}
+
+      {isOwner && (
+        <CommunityPostModal
+          isOpen={showCommunityModal}
+          onClose={() => setShowCommunityModal(false)}
+          newPostContent={newPostContent}
+          setNewPostContent={setNewPostContent}
+          handleCreatePost={handleCreatePost}
+        />
+      )}
+
+      {isOwner && (
+        <CreatePlaylistModal
+          isOpen={showPlaylistModal}
+          onClose={() => setShowPlaylistModal(false)}
+          newPlaylist={newPlaylist}
+          setNewPlaylist={setNewPlaylist}
+          handleCreatePlaylist={handleCreatePlaylist}
+        />
+      )}
+
+      {isOwner && (
+        <UploadVideoModal
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            handleUpload={handleUpload}
         />
       )}
     </ScrollView>

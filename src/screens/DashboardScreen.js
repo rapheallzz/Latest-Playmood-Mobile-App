@@ -56,21 +56,17 @@ export default function Dashboard() {
           </Pressable>
         </View>
 
+        {/* Admin-only button */}
         {user?.role === 'admin' && (
           <View style={styles.adminButtons}>
             <Pressable style={styles.adminButton} onPress={() => navigation.navigate('AdminPage')}>
               <Text style={styles.buttonText}>Admin Page</Text>
             </Pressable>
-            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('ApplyAsCreator')}>
-              <Text style={styles.buttonText}>Apply as a Creator</Text>
-            </Pressable>
-            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
-              <Text style={styles.buttonText}>Post a Video for Review</Text>
-            </Pressable>
           </View>
         )}
 
-        {user?.role !== 'admin' && user?.role !== 'creator' && (
+        {/* Buttons for non-creators (admins and normal users) */}
+        {user?.role !== 'creator' && (
           <View style={styles.adminButtons}>
             <Pressable style={styles.adminButton} onPress={() => navigation.navigate('ApplyAsCreator')}>
               <Text style={styles.buttonText}>Apply as a Creator</Text>
@@ -81,6 +77,7 @@ export default function Dashboard() {
           </View>
         )}
 
+        {/* Creator-only buttons */}
         {user?.role === 'creator' && (
           <View style={styles.adminButtons}>
             <Pressable style={styles.adminButton} onPress={() => navigation.navigate('CreatorPage', { creator: user })}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
+import { Modal, View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function EditChannelModal({
   isOpen,
@@ -16,8 +17,28 @@ export default function EditChannelModal({
   setLinkedin,
   twitter,
   setTwitter,
+  bannerImage,
+  setBannerImageFile,
   handleUpdateChannelInfo,
 }) {
+  const handlePickBanner = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setBannerImageFile(result.assets[0]);
+    }
+  };
   return (
     <Modal
       animationType="slide"
@@ -61,9 +82,9 @@ export default function EditChannelModal({
             <Text style={styles.label}>Twitter URL</Text>
             <TextInput style={styles.input} value={twitter} onChangeText={setTwitter} placeholderTextColor="#888" />
 
-            {/* Banner image upload will be added later */}
             <Text style={styles.label}>Banner Image</Text>
-            <Pressable style={styles.button} onPress={() => Alert.alert("TODO: Implement Image Picker")}>
+            {bannerImage && <Image source={{ uri: bannerImage }} style={styles.bannerPreview} />}
+            <Pressable style={styles.button} onPress={handlePickBanner}>
                 <Text style={styles.buttonText}>Change Banner</Text>
             </Pressable>
 
@@ -162,5 +183,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  bannerPreview: {
+    width: '100%',
+    height: 150,
+    borderRadius: 5,
+    marginBottom: 10,
+    backgroundColor: '#333',
   },
 });

@@ -110,7 +110,6 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {user?.role === 'admin' && (
           <View style={styles.boxHolder}>
             <View style={styles.boxText}>
               <FontAwesomeIcon icon={faHistory} style={styles.iconStyle} />
@@ -125,7 +124,7 @@ export default function Dashboard() {
               <Text style={styles.boxInnerText}>Remove Cache</Text>
             </View>
           </View>
-        )}
+   
       </ScrollView>
     </View>
   );

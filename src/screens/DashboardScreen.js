@@ -70,6 +70,17 @@ export default function Dashboard() {
           </View>
         )}
 
+        {user?.role === 'creator' && (
+          <View style={styles.adminButtons}>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('CreatorPage')}>
+              <Text style={styles.buttonText}>Visit Channel</Text>
+            </Pressable>
+            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('PostVideoForReview')}>
+              <Text style={styles.buttonText}>Upload a content for review</Text>
+            </Pressable>
+          </View>
+        )}
+
         <View>
           <View style={styles.dashButton}>
             <Pressable style={styles.subButton} onPress={() => setSliderType('likes')}>

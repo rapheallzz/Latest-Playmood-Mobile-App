@@ -9,7 +9,6 @@ import { FacebookShareButton, TwitterShareButton, WhatsappShareButton, LinkedinS
 import EditChannelModal from '../components/EditChannelModal';
 import CommunityPostModal from '../components/CommunityPostModal';
 import CreatePlaylistModal from '../components/CreatePlaylistModal';
-import UploadVideoModal from '../components/UploadVideoModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../features/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -58,8 +57,6 @@ export default function CreatorChannel() {
     // State for Banner Image
     const [bannerImageFile, setBannerImageFile] = useState(null);
 
-    // State for Upload Video Modal
-    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const fetchPlaylists = async () => {
         if (!creatorId) {
@@ -264,73 +261,6 @@ export default function CreatorChannel() {
         } catch (err) {
             console.error('Error creating playlist:', err.response?.data || err.message);
             Alert.alert('Error', 'Failed to create playlist.');
-        }
-    };
-
-    const handleUpload = async (videoData) => {
-        const { title, description, credit, category, assets, previewStart, previewEnd } = videoData;
-
-        if (!title.trim() || !description.trim()) {
-            Alert.alert('Error', 'Title and description are required.');
-            return;
-        }
-        if (!assets || assets.length === 0) {
-            Alert.alert('Error', 'Please select at least one file to upload.');
-            return;
-        }
-
-        const userString = await AsyncStorage.getItem('user');
-        const userData = userString ? JSON.parse(userString) : null;
-        if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to upload a video.');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('credit', credit);
-        formData.append('category', category);
-        formData.append('userId', loggedInUser._id);
-        formData.append('previewStart', previewStart);
-        formData.append('previewEnd', previewEnd);
-
-        assets.forEach(asset => {
-            const uriParts = asset.uri.split('.');
-            const fileType = uriParts[uriParts.length - 1];
-
-            formData.append('files', {
-                uri: asset.uri,
-                name: asset.fileName || `upload.${fileType}`,
-                type: `${asset.type}/${fileType}`,
-            });
-        });
-
-        try {
-            const token = userData.token;
-            // TODO: Add progress tracking
-            const response = await axios.post(
-                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`,
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data',
-                    },
-                    transformRequest: (data, headers) => {
-                        return formData; // Axios workaround
-                    },
-                }
-            );
-
-            // Add new video to the list (or refetch)
-            setVideos(prev => [response.data.content, ...prev]);
-            setShowUploadModal(false);
-            Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-
-        } catch (err) {
-            console.error('Error uploading video:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to upload video.');
         }
     };
 
@@ -706,7 +636,7 @@ export default function CreatorChannel() {
           <Pressable style={styles.actionButton} onPress={() => setShowCommunityModal(true)}>
             <Text style={styles.actionButtonText}>New Post</Text>
           </Pressable>
-          <Pressable style={styles.actionButton} onPress={() => setShowUploadModal(true)}>
+          <Pressable style={styles.actionButton} onPress={() => navigation.navigate('PostVideoForReview')}>
             <Text style={styles.actionButtonText}>Upload Video</Text>
           </Pressable>
           <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
@@ -768,20 +698,13 @@ export default function CreatorChannel() {
         />
       )}
 
-      {isOwner && (
-        <UploadVideoModal
-            isOpen={showUploadModal}
-            onClose={() => setShowUploadModal(false)}
-            handleUpload={handleUpload}
-        />
-      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   actionButton: {
-    backgroundColor: '#541011',
+    backgroundColor: '#333',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
@@ -793,7 +716,7 @@ const styles = StyleSheet.create({
   creatorActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: 2,
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   container: {

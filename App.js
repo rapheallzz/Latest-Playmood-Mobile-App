@@ -12,6 +12,7 @@ import RegistrationScreen from './src/screens/RegistrationScreen';
 import SplashScreen from './src/screens/SplashScreen';
 import VideoScreen from './src/screens/VideoScreen';
 import CreatorChannel from './src/screens/ChannelScreen';
+import UploadScreen from './src/screens/UploadScreen';
 
 const Stack = createStackNavigator();
 
@@ -28,6 +29,7 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
             <Stack.Screen name="VideoScreen" component={VideoScreen} options={{ headerShown: false }} />
             <Stack.Screen name="CreatorPage" component={CreatorChannel} options={{ headerShown: false }} />
+            <Stack.Screen name="PostVideoForReview" component={UploadScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </Provider>

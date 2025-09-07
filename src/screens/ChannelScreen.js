@@ -315,7 +315,7 @@ export default function CreatorChannel() {
                         renderItem={({ item }) => (
                             <CommunityPostCard
                                 post={item}
-                                user={user}
+                                user={loggedInUser}
                                 onLike={handleLike}
                                 onCommentSubmit={handleCommentSubmit}
                             />
@@ -468,7 +468,7 @@ export default function CreatorChannel() {
         };
 
         fetchCreatorData();
-    }, [creatorId, user]);
+    }, [creatorId, loggedInUser]);
   
     if (isLoading) {
         return (

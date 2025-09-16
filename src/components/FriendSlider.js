@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
-import Carousel from 'react-native-reanimated-carousel';
+import Carousel from 'react-native-snap-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFriends } from '../features/contentSlice';
@@ -30,19 +30,14 @@ const FriendSlider = () => {
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-        data={friends}
-        renderItem={({ item, index }) => (
-          <View style={styles.itemContainer}>
-            <ContentCard item={item} />
-          </View>
-        )}
-        width={screenWidth}
-        height={500}
-        loop={true}
-        autoPlay={true}
-        autoPlayInterval={3000}
-        style={styles.carousel}
-      />
+          data={friends}
+          renderItem={({ item }) => <ContentCard item={item} />}
+          sliderWidth={screenWidth}
+          itemWidth={screenWidth * 0.8}
+          loop={true}
+          autoplay={true}
+          autoplayInterval={3000}
+        />
       )}
     </View>
   );

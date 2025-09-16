@@ -1,26 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
-import Carousel from 'react-native-reanimated-carousel';
+import Carousel from 'react-native-snap-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchLikedContent } from '../features/contentSlice';
+import { fetchWatchlistContent } from '../features/contentSlice';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const LikeSlider = () => {
+const WatchlistSlider = () => {
   const dispatch = useDispatch();
-  const { likes, isLoading, isError, message } = useSelector(state => state.content);
+  const { watchlist, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user && user._id) {
-      dispatch(fetchLikedContent(user._id));
+      dispatch(fetchWatchlistContent(user._id));
     }
   }, [dispatch, user]);
 
-  if (loading) {
+  if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;
   }
 
@@ -33,19 +32,14 @@ const LikeSlider = () => {
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-        data={likes}
-        renderItem={({ item, index }) => (
-          <View style={styles.itemContainer}>
-            <ContentCard item={item} />
-          </View>
-        )}
-        width={screenWidth}
-        height={500}
-        loop={true}
-        autoPlay={true}
-        autoPlayInterval={3000}
-        style={styles.carousel}
-      />
+          data={watchlist}
+          renderItem={({ item }) => <ContentCard item={item} />}
+          sliderWidth={screenWidth}
+          itemWidth={screenWidth * 0.8}
+          loop={true}
+          autoplay={true}
+          autoplayInterval={3000}
+        />
       )}
     </View>
   );
@@ -93,4 +87,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LikeSlider;
+export default WatchlistSlider;

@@ -291,12 +291,12 @@ export default function CreatorChannel() {
 
         try {
             const token = userData.token;
-            const updatedPlaylist = await contentService.updatePlaylist(
+            const response = await contentService.updatePlaylist(
                 editingPlaylist._id,
                 { name: editingPlaylist.name, description: editingPlaylist.description },
                 token
             );
-            setPlaylists(playlists.map(p => p._id === editingPlaylist._id ? updatedPlaylist : p));
+            setPlaylists(playlists.map(p => p._id === editingPlaylist._id ? response.playlist : p));
             setShowEditPlaylistModal(false);
             setEditingPlaylist(null);
             Alert.alert('Success', 'Playlist updated successfully!');
@@ -355,8 +355,8 @@ export default function CreatorChannel() {
 
         try {
             const token = userData.token;
-            const updatedPlaylist = await contentService.addVideoToPlaylist(selectedPlaylist._id, contentId, token);
-            setPlaylists(playlists.map(p => p._id === selectedPlaylist._id ? updatedPlaylist : p));
+            const response = await contentService.addVideoToPlaylist(selectedPlaylist._id, contentId, token);
+            setPlaylists(playlists.map(p => p._id === selectedPlaylist._id ? response.playlist : p));
             setShowAddVideoModal(false);
             Alert.alert('Success', 'Video added to playlist successfully!');
         } catch (err) {
@@ -466,44 +466,99 @@ export default function CreatorChannel() {
         }
     };
 
+    const renderHeader = () => (
+        <>
+            <View style={styles.bannerContainer}>
+                <Image source={{ uri: creatorData?.bannerImage }} style={styles.bannerImage} />
+                <View style={styles.shareIcons}>
+                    <Pressable><FontAwesome name="facebook" size={24} color="white" /></Pressable>
+                    <Pressable><FontAwesome name="twitter" size={24} color="white" /></Pressable>
+                    <Pressable><FontAwesome name="whatsapp" size={24} color="white" /></Pressable>
+                    <Pressable><FontAwesome name="instagram" size={24} color="white" /></Pressable>
+                    <Pressable><FontAwesome name="linkedin" size={24} color="white" /></Pressable>
+                </View>
+            </View>
+
+            <View style={styles.profileContainer}>
+                <Image source={{ uri: creatorData?.profileImage }} style={styles.profileImage} />
+                <View>
+                    <Text style={styles.creatorName}>{creatorData?.name}</Text>
+                    <Text style={styles.subscriberCount}>{creatorData?.subscribers} subscribers</Text>
+                </View>
+                {!isOwner && (
+                    <>
+                        <Pressable style={styles.subscribeButton} onPress={handleSubscribeClick}>
+                            <Text style={styles.subscribeText}>{subscribed ? 'Unsubscribe' : 'Subscribe'}</Text>
+                        </Pressable>
+                        <FontAwesome name="bell" size={24} color="white" />
+                    </>
+                )}
+            </View>
+
+            {isOwner && (
+                <View style={styles.creatorActions}>
+                    <Pressable style={styles.actionButton} onPress={() => setShowPlaylistModal(true)}>
+                        <Text style={styles.actionButtonText}>New Playlist</Text>
+                    </Pressable>
+                    <Pressable style={styles.actionButton} onPress={() => setShowCommunityModal(true)}>
+                        <Text style={styles.actionButtonText}>New Post</Text>
+                    </Pressable>
+                    <Pressable style={styles.actionButton} onPress={() => navigation.navigate('PostVideoForReview')}>
+                        <Text style={styles.actionButtonText}>Upload Video</Text>
+                    </Pressable>
+                    <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
+                        <Text style={styles.actionButtonText}>Edit Channel</Text>
+                    </Pressable>
+                </View>
+            )}
+
+            <View style={styles.navLinks}>
+                <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={styles.navLink}>VIDEOS</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('PLAYLISTS')}><Text style={styles.navLink}>PLAYLIST</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('COMMUNITY')}><Text style={styles.navLink}>COMMUNITY</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('ABOUT')}><Text style={styles.navLink}>ABOUT</Text></Pressable>
+            </View>
+        </>
+    );
+
     const renderContent = () => {
+        const header = renderHeader();
+
         switch (activeTab) {
             case 'VIDEOS':
                 return (
-                    <>
-                        <Text style={styles.contentTitle}>Videos</Text>
-                        <FlatList
-                            data={videos}
-                            renderItem={({ item }) => <ContentCard item={item} />}
-                            keyExtractor={(item) => item._id}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                        />
-                    </>
+                    <ScrollView>
+                        {header}
+                        <View style={styles.contentSection}>
+                            <Text style={styles.contentTitle}>Videos</Text>
+                            <FlatList
+                                data={videos}
+                                renderItem={({ item }) => <ContentCard item={item} />}
+                                keyExtractor={(item) => item._id}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                            />
+                        </View>
+                    </ScrollView>
                 );
             case 'PLAYLISTS':
                 if (isLoadingPlaylists) {
-                    return <ActivityIndicator size="large" color="#fff" />;
+                    return <View><ActivityIndicator size="large" color="#fff" /></View>;
                 }
                 return (
                     <FlatList
+                        ListHeaderComponent={header}
                         data={playlists}
                         keyExtractor={(item) => item._id.toString()}
                         renderItem={({ item: playlist }) => (
-                            <View>
+                            <View style={styles.contentSection}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <Text style={styles.contentTitle}>{playlist.name}</Text>
                                     {isOwner && (
                                         <View style={{ flexDirection: 'row' }}>
-                                            <Pressable onPress={() => handleOpenAddVideoModal(playlist)} style={{ marginRight: 10 }}>
-                                                <FontAwesome name="plus" size={20} color="white" />
-                                            </Pressable>
-                                            <Pressable onPress={() => handleOpenEditPlaylistModal(playlist)} style={{ marginRight: 10 }}>
-                                                <FontAwesome name="edit" size={20} color="white" />
-                                            </Pressable>
-                                            <Pressable onPress={() => handleDeletePlaylist(playlist._id)}>
-                                                <FontAwesome name="trash" size={20} color="white" />
-                                            </Pressable>
+                                            <Pressable onPress={() => handleOpenAddVideoModal(playlist)} style={{ marginRight: 10 }}><FontAwesome name="plus" size={20} color="white" /></Pressable>
+                                            <Pressable onPress={() => handleOpenEditPlaylistModal(playlist)} style={{ marginRight: 10 }}><FontAwesome name="edit" size={20} color="white" /></Pressable>
+                                            <Pressable onPress={() => handleDeletePlaylist(playlist._id)}><FontAwesome name="trash" size={20} color="white" /></Pressable>
                                         </View>
                                     )}
                                 </View>
@@ -524,51 +579,41 @@ export default function CreatorChannel() {
                 );
             case 'COMMUNITY':
                 if (isLoadingPosts) {
-                    return <ActivityIndicator size="large" color="#fff" />;
+                    return <View><ActivityIndicator size="large" color="#fff" /></View>;
                 }
                 return (
                     <FlatList
+                        ListHeaderComponent={header}
                         data={communityPosts}
                         keyExtractor={(item) => item._id}
                         renderItem={({ item }) => (
-                            <CommunityPostCard
-                                post={item}
-                                user={loggedInUser}
-                                onLike={handleLike}
-                                onCommentSubmit={handleCommentSubmit}
-                            />
+                            <View style={styles.contentSection}>
+                                <CommunityPostCard
+                                    post={item}
+                                    user={loggedInUser}
+                                    onLike={handleLike}
+                                    onCommentSubmit={handleCommentSubmit}
+                                />
+                            </View>
                         )}
                     />
                 );
             case 'ABOUT':
                 return (
-                    <View>
-                        <Text style={styles.contentTitle}>About</Text>
-                        <Text style={styles.aboutText}>{creatorData?.about}</Text>
-                        <Text style={styles.contentTitle}>Connect</Text>
-                        <View style={styles.socialIcons}>
-                            {creatorData?.twitter && (
-                                <Pressable onPress={() => Linking.openURL(creatorData.twitter)}>
-                                    <FontAwesome name="twitter" size={24} color="white" />
-                                </Pressable>
-                            )}
-                            {creatorData?.instagram && (
-                                <Pressable onPress={() => Linking.openURL(creatorData.instagram)}>
-                                    <FontAwesome name="instagram" size={24} color="white" />
-                                </Pressable>
-                            )}
-                            {creatorData?.linkedin && (
-                                <Pressable onPress={() => Linking.openURL(creatorData.linkedin)}>
-                                    <FontAwesome name="linkedin" size={24} color="white" />
-                                </Pressable>
-                            )}
-                            {creatorData?.tiktok && (
-                                <Pressable onPress={() => Linking.openURL(creatorData.tiktok)}>
-                                    <FontAwesome name="tiktok" size={24} color="white" />
-                                </Pressable>
-                            )}
+                    <ScrollView>
+                        {header}
+                        <View style={styles.contentSection}>
+                            <Text style={styles.contentTitle}>About</Text>
+                            <Text style={styles.aboutText}>{creatorData?.about}</Text>
+                            <Text style={styles.contentTitle}>Connect</Text>
+                            <View style={styles.socialIcons}>
+                                {creatorData?.twitter && (<Pressable onPress={() => Linking.openURL(creatorData.twitter)}><FontAwesome name="twitter" size={24} color="white" /></Pressable>)}
+                                {creatorData?.instagram && (<Pressable onPress={() => Linking.openURL(creatorData.instagram)}><FontAwesome name="instagram" size={24} color="white" /></Pressable>)}
+                                {creatorData?.linkedin && (<Pressable onPress={() => Linking.openURL(creatorData.linkedin)}><FontAwesome name="linkedin" size={24} color="white" /></Pressable>)}
+                                {creatorData?.tiktok && (<Pressable onPress={() => Linking.openURL(creatorData.tiktok)}><FontAwesome name="tiktok" size={24} color="white" /></Pressable>)}
+                            </View>
                         </View>
-                    </View>
+                    </ScrollView>
                 );
             default:
                 return null;
@@ -705,74 +750,10 @@ export default function CreatorChannel() {
     }
   
     return (
-  
-    <ScrollView style={styles.container}>
-      <View style={styles.bannerContainer}>
-        <Image source={{ uri: creatorData?.bannerImage }} style={styles.bannerImage} />
-        <View style={styles.shareIcons}>
-          <Pressable>
-            <FontAwesome name="facebook" size={24} color="white" />
-          </Pressable>
-          <Pressable>
-            <FontAwesome name="twitter" size={24} color="white" />
-          </Pressable>
-          <Pressable>
-            <FontAwesome name="whatsapp" size={24} color="white" />
-          </Pressable>
-          <Pressable>
-            <FontAwesome name="instagram" size={24} color="white" />
-          </Pressable>
-          <Pressable>
-            <FontAwesome name="linkedin" size={24} color="white" />
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.profileContainer}>
-        <Image source={{ uri: creatorData?.profileImage }} style={styles.profileImage} />
-        <View>
-          <Text style={styles.creatorName}>{creatorData?.name}</Text>
-          <Text style={styles.subscriberCount}>{creatorData?.subscribers} subscribers</Text>
-        </View>
-        {!isOwner && (
-          <>
-            <Pressable style={styles.subscribeButton} onPress={handleSubscribeClick}>
-              <Text style={styles.subscribeText}>{subscribed ? 'Unsubscribe' : 'Subscribe'}</Text>
-            </Pressable>
-            <FontAwesome name="bell" size={24} color="white" />
-          </>
-        )}
-      </View>
-
-      {isOwner && (
-        <View style={styles.creatorActions}>
-          <Pressable style={styles.actionButton} onPress={() => setShowPlaylistModal(true)}>
-            <Text style={styles.actionButtonText}>New Playlist</Text>
-          </Pressable>
-          <Pressable style={styles.actionButton} onPress={() => setShowCommunityModal(true)}>
-            <Text style={styles.actionButtonText}>New Post</Text>
-          </Pressable>
-          <Pressable style={styles.actionButton} onPress={() => navigation.navigate('PostVideoForReview')}>
-            <Text style={styles.actionButtonText}>Upload Video</Text>
-          </Pressable>
-          <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
-            <Text style={styles.actionButtonText}>Edit Channel</Text>
-          </Pressable>
-        </View>
-      )}
-
-      <View style={styles.navLinks}>
-        <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={styles.navLink}>VIDEOS</Text></Pressable>
-        <Pressable onPress={() => handleTabClick('PLAYLISTS')}><Text style={styles.navLink}>PLAYLIST</Text></Pressable>
-        <Pressable onPress={() => handleTabClick('COMMUNITY')}><Text style={styles.navLink}>COMMUNITY</Text></Pressable>
-        <Pressable onPress={() => handleTabClick('ABOUT')}><Text style={styles.navLink}>ABOUT</Text></Pressable>
-      </View>
-
-      <View style={styles.contentSection}>
+      <View style={styles.container}>
         {renderContent()}
-      </View>
 
-      {isOwner && (
+        {isOwner && (
         <EditChannelModal
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
@@ -833,8 +814,7 @@ export default function CreatorChannel() {
           onAddVideo={handleAddVideoToPlaylist}
         />
       )}
-
-    </ScrollView>
+    </View>
   );
 }
 

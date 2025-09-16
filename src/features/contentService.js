@@ -40,6 +40,41 @@ const fetchFriends = async (token) => {
   return response;
 };
 
+const addVideoToPlaylist = async (playlistId, contentId, token) => {
+  const response = await axios.post(
+    `${API_URL}/playlists/${playlistId}/videos/${contentId}`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
+const updatePlaylist = async (playlistId, playlistData, token) => {
+  const response = await axios.put(
+    `${API_URL}/playlists/${playlistId}`,
+    playlistData,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
+const deletePlaylist = async (playlistId, token) => {
+  const response = await axios.delete(`${API_URL}/playlists/${playlistId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -47,4 +82,7 @@ export default {
   likeContent,
   fetchLikedContent,
   fetchFriends,
+  addVideoToPlaylist,
+  updatePlaylist,
+  deletePlaylist,
 };

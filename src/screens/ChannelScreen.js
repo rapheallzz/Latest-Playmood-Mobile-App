@@ -12,6 +12,8 @@ import CreatePlaylistModal from '../components/CreatePlaylistModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../features/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import contentService from '../features/contentService';
+import AddVideoToPlaylistModal from '../components/AddVideoToPlaylistModal';
 
 export default function CreatorChannel() {
     const navigation = useNavigation();
@@ -53,6 +55,14 @@ export default function CreatorChannel() {
     // State for Playlist Modal
     const [showPlaylistModal, setShowPlaylistModal] = useState(false);
     const [newPlaylist, setNewPlaylist] = useState({ name: '', description: '', visibility: 'public' });
+
+    // State for Edit Playlist Modal
+    const [showEditPlaylistModal, setShowEditPlaylistModal] = useState(false);
+    const [editingPlaylist, setEditingPlaylist] = useState(null);
+
+    // State for Add Video to Playlist Modal
+    const [showAddVideoModal, setShowAddVideoModal] = useState(false);
+    const [selectedPlaylist, setSelectedPlaylist] = useState(null);
 
     // State for Banner Image
     const [bannerImageFile, setBannerImageFile] = useState(null);
@@ -264,6 +274,97 @@ export default function CreatorChannel() {
         }
     };
 
+    const handleOpenEditPlaylistModal = (playlist) => {
+        setEditingPlaylist(playlist);
+        setShowEditPlaylistModal(true);
+    };
+
+    const handleUpdatePlaylist = async () => {
+        if (!editingPlaylist) return;
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to update a playlist.');
+            return;
+        }
+
+        try {
+            const token = userData.token;
+            const updatedPlaylist = await contentService.updatePlaylist(
+                editingPlaylist._id,
+                { name: editingPlaylist.name, description: editingPlaylist.description },
+                token
+            );
+            setPlaylists(playlists.map(p => p._id === editingPlaylist._id ? updatedPlaylist : p));
+            setShowEditPlaylistModal(false);
+            setEditingPlaylist(null);
+            Alert.alert('Success', 'Playlist updated successfully!');
+        } catch (err) {
+            console.error('Error updating playlist:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to update playlist.');
+        }
+    };
+
+    const handleDeletePlaylist = async (playlistId) => {
+        Alert.alert(
+            'Delete Playlist',
+            'Are you sure you want to delete this playlist?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const userString = await AsyncStorage.getItem('user');
+                        const userData = userString ? JSON.parse(userString) : null;
+                        if (!userData || !userData.token) {
+                            Alert.alert('Error', 'You must be logged in to delete a playlist.');
+                            return;
+                        }
+
+                        try {
+                            const token = userData.token;
+                            await contentService.deletePlaylist(playlistId, token);
+                            setPlaylists(playlists.filter(p => p._id !== playlistId));
+                            Alert.alert('Success', 'Playlist deleted successfully!');
+                        } catch (err) {
+                            console.error('Error deleting playlist:', err.response?.data || err.message);
+                            Alert.alert('Error', 'Failed to delete playlist.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleOpenAddVideoModal = (playlist) => {
+        setSelectedPlaylist(playlist);
+        setShowAddVideoModal(true);
+    };
+
+    const handleAddVideoToPlaylist = async (contentId) => {
+        if (!selectedPlaylist) return;
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to add a video to a playlist.');
+            return;
+        }
+
+        try {
+            const token = userData.token;
+            const updatedPlaylist = await contentService.addVideoToPlaylist(selectedPlaylist._id, contentId, token);
+            setPlaylists(playlists.map(p => p._id === selectedPlaylist._id ? updatedPlaylist : p));
+            setShowAddVideoModal(false);
+            Alert.alert('Success', 'Video added to playlist successfully!');
+        } catch (err) {
+            console.error('Error adding video to playlist:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to add video to playlist.');
+        }
+    };
+
     const handleOpenEditModal = () => {
         setName(creatorData?.name || '');
         setAbout(creatorData?.about || '');
@@ -387,15 +488,30 @@ export default function CreatorChannel() {
                 return (
                     <FlatList
                         data={playlists}
-                        keyExtractor={(item) => item._id}
+                        keyExtractor={(item) => item._id.toString()}
                         renderItem={({ item: playlist }) => (
                             <View>
-                                <Text style={styles.contentTitle}>{playlist.name}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={styles.contentTitle}>{playlist.name}</Text>
+                                    {isOwner && (
+                                        <View style={{ flexDirection: 'row' }}>
+                                            <Pressable onPress={() => handleOpenAddVideoModal(playlist)} style={{ marginRight: 10 }}>
+                                                <FontAwesome name="plus" size={20} color="white" />
+                                            </Pressable>
+                                            <Pressable onPress={() => handleOpenEditPlaylistModal(playlist)} style={{ marginRight: 10 }}>
+                                                <FontAwesome name="edit" size={20} color="white" />
+                                            </Pressable>
+                                            <Pressable onPress={() => handleDeletePlaylist(playlist._id)}>
+                                                <FontAwesome name="trash" size={20} color="white" />
+                                            </Pressable>
+                                        </View>
+                                    )}
+                                </View>
                                 {playlist.videos.length > 0 ? (
                                     <FlatList
                                         data={playlist.videos}
                                         renderItem={({ item }) => <ContentCard item={item} />}
-                                        keyExtractor={(item) => item._id}
+                                        keyExtractor={(item) => item._id.toString()}
                                         horizontal
                                         showsHorizontalScrollIndicator={false}
                                     />
@@ -695,6 +811,26 @@ export default function CreatorChannel() {
           newPlaylist={newPlaylist}
           setNewPlaylist={setNewPlaylist}
           handleCreatePlaylist={handleCreatePlaylist}
+        />
+      )}
+
+      {isOwner && editingPlaylist && (
+        <CreatePlaylistModal
+          isOpen={showEditPlaylistModal}
+          onClose={() => setShowEditPlaylistModal(false)}
+          newPlaylist={editingPlaylist}
+          setNewPlaylist={setEditingPlaylist}
+          handleCreatePlaylist={handleUpdatePlaylist}
+          isEditing
+        />
+      )}
+
+      {isOwner && (
+        <AddVideoToPlaylistModal
+          isOpen={showAddVideoModal}
+          onClose={() => setShowAddVideoModal(false)}
+          videos={videos}
+          onAddVideo={handleAddVideoToPlaylist}
         />
       )}
 

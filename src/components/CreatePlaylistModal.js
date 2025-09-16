@@ -7,6 +7,7 @@ export default function CreatePlaylistModal({
   newPlaylist,
   setNewPlaylist,
   handleCreatePlaylist,
+  isEditing = false,
 }) {
   return (
     <Modal
@@ -17,7 +18,7 @@ export default function CreatePlaylistModal({
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Create Playlist</Text>
+          <Text style={styles.modalTitle}>{isEditing ? 'Edit Playlist' : 'Create Playlist'}</Text>
 
           <Text style={styles.label}>Name</Text>
           <TextInput
@@ -64,7 +65,7 @@ export default function CreatePlaylistModal({
               onPress={handleCreatePlaylist}
               disabled={!newPlaylist.name.trim()}
             >
-              <Text style={styles.buttonText}>Create</Text>
+              <Text style={styles.buttonText}>{isEditing ? 'Update' : 'Create'}</Text>
             </Pressable>
           </View>
         </View>

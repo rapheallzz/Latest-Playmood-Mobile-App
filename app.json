@@ -10,7 +10,7 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-    }, 
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -33,7 +33,10 @@
         "projectId": "0ba33c01-0938-49b6-9b45-2d1485106904"
       }
     },
-    "owner": "rightsort"
+    "owner": "rightsort",
+    "sdkVersion": "54.0.0",
+    "plugins": [
+      "expo-video"
+    ]
   }
 }
-

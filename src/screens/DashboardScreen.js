@@ -21,7 +21,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     dispatch(logout()).then(() => {
-      navigation.navigate('Home');
+      navigation.navigate('Login');
       console.log('logout success');
     });
   };

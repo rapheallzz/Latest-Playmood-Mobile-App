@@ -109,6 +109,34 @@ const deleteCommunityComment = async (postId, commentId, token) => {
   return response.data;
 };
 
+const updateChannelDetails = async (userId, details, token) => {
+  const response = await axios.put(`${API_URL}/channel/${userId}`, details, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+const updateChannelBanner = async (userId, imageFile, token) => {
+  const formData = new FormData();
+  const uriParts = imageFile.uri.split('.');
+  const fileType = uriParts[uriParts.length - 1];
+  formData.append('image', {
+    uri: imageFile.uri,
+    name: imageFile.fileName || `banner.${fileType}`,
+    type: `${imageFile.type}/${fileType}`,
+  });
+
+  const response = await axios.put(`${API_URL}/channel/${userId}/banner`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -122,4 +150,6 @@ export default {
   updateCommunityPost,
   deleteCommunityPost,
   deleteCommunityComment,
+  updateChannelDetails,
+  updateChannelBanner,
 };

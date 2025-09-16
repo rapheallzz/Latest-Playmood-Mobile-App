@@ -148,58 +148,24 @@ export default function CreatorChannel() {
             Alert.alert('Error', 'You must be logged in to update your channel.');
             return;
         }
-
         const token = userData.token;
-        let response;
 
         try {
+            // Step 1: Update channel details
+            const detailsPayload = {
+                name,
+                about,
+                socials: { instagram, tiktok, linkedin, twitter },
+            };
+            const detailsResponse = await contentService.updateChannelDetails(creatorId, detailsPayload, token);
+            setCreatorData(detailsResponse.channel);
+
+            // Step 2: If there's a banner image, update it
             if (bannerImageFile) {
-                // If there's a new banner, use FormData
-                const formData = new FormData();
-                formData.append('name', name);
-                formData.append('about', about);
-                // Socials might need to be stringified if the backend expects it with FormData
-                formData.append('socials', JSON.stringify({ instagram, tiktok, linkedin, twitter }));
-
-                const uriParts = bannerImageFile.uri.split('.');
-                const fileType = uriParts[uriParts.length - 1];
-                formData.append('bannerImage', {
-                    uri: bannerImageFile.uri,
-                    name: bannerImageFile.fileName || `banner.${fileType}`,
-                    type: `${bannerImageFile.type}/${fileType}`,
-                });
-
-                response = await axios.put(
-                    `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
-                    formData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'multipart/form-data',
-                        },
-                        transformRequest: (data, headers) => {
-                            return formData; // Axios workaround
-                        },
-                    }
-                );
-            } else {
-                // If no new banner, send as JSON
-                const payload = {
-                    name,
-                    about,
-                    socials: { instagram, tiktok, linkedin, twitter },
-                };
-                response = await axios.put(
-                    `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/channel/${creatorId}`,
-                    payload,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                );
+                const bannerResponse = await contentService.updateChannelBanner(creatorId, bannerImageFile, token);
+                setCreatorData(bannerResponse.channel); // Assuming the banner response also returns the updated channel
             }
 
-            // Update state with the response data
-            setCreatorData(response.data.channel);
             setBannerImageFile(null); // Reset the file state
             setShowEditModal(false);
             Alert.alert('Success', 'Channel information updated successfully!');

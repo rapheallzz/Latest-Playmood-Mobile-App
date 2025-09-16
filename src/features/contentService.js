@@ -75,6 +75,40 @@ const deletePlaylist = async (playlistId, token) => {
   return response.data;
 };
 
+const updateCommunityPost = async (postId, content, token) => {
+  const response = await axios.put(
+    `${API_URL}/community/${postId}`,
+    { content },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
+const deleteCommunityPost = async (postId, token) => {
+  const response = await axios.delete(`${API_URL}/community/${postId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+const deleteCommunityComment = async (postId, commentId, token) => {
+  const response = await axios.delete(
+    `${API_URL}/community/${postId}/comment/${commentId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -85,4 +119,7 @@ export default {
   addVideoToPlaylist,
   updatePlaylist,
   deletePlaylist,
+  updateCommunityPost,
+  deleteCommunityPost,
+  deleteCommunityComment,
 };

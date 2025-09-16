@@ -14,6 +14,7 @@ import { setUser } from '../features/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import contentService from '../features/contentService';
 import AddVideoToPlaylistModal from '../components/AddVideoToPlaylistModal';
+import EditPostModal from '../components/EditPostModal';
 
 export default function CreatorChannel() {
     const navigation = useNavigation();
@@ -51,6 +52,10 @@ export default function CreatorChannel() {
     // State for Community Post Modal
     const [showCommunityModal, setShowCommunityModal] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
+
+    // State for Edit Post Modal
+    const [showEditPostModal, setShowEditPostModal] = useState(false);
+    const [editingPost, setEditingPost] = useState(null);
 
     // State for Playlist Modal
     const [showPlaylistModal, setShowPlaylistModal] = useState(false);
@@ -221,7 +226,7 @@ export default function CreatorChannel() {
         try {
             const token = userData.token;
             const response = await axios.post(
-                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/community`,
+                `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/community/create`,
                 { content: newPostContent },
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -238,6 +243,110 @@ export default function CreatorChannel() {
             console.error('Error creating community post:', err.response?.data || err.message);
             Alert.alert('Error', 'Failed to create community post.');
         }
+    };
+
+    const handleOpenEditPostModal = (post) => {
+        setEditingPost(post);
+        setShowEditPostModal(true);
+    };
+
+    const handleUpdatePost = async () => {
+        if (!editingPost) return;
+
+        const userString = await AsyncStorage.getItem('user');
+        const userData = userString ? JSON.parse(userString) : null;
+        if (!userData || !userData.token) {
+            Alert.alert('Error', 'You must be logged in to update a post.');
+            return;
+        }
+
+        try {
+            const token = userData.token;
+            const updatedPost = await contentService.updateCommunityPost(
+                editingPost._id,
+                editingPost.content,
+                token
+            );
+            setCommunityPosts(communityPosts.map(p => p._id === editingPost._id ? updatedPost : p));
+            setShowEditPostModal(false);
+            setEditingPost(null);
+            Alert.alert('Success', 'Post updated successfully!');
+        } catch (err) {
+            console.error('Error updating post:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to update post.');
+        }
+    };
+
+    const handleDeletePost = async (postId) => {
+        Alert.alert(
+            'Delete Post',
+            'Are you sure you want to delete this post?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const userString = await AsyncStorage.getItem('user');
+                        const userData = userString ? JSON.parse(userString) : null;
+                        if (!userData || !userData.token) {
+                            Alert.alert('Error', 'You must be logged in to delete a post.');
+                            return;
+                        }
+
+                        try {
+                            const token = userData.token;
+                            await contentService.deleteCommunityPost(postId, token);
+                            setCommunityPosts(communityPosts.filter(p => p._id !== postId));
+                            Alert.alert('Success', 'Post deleted successfully!');
+                        } catch (err) {
+                            console.error('Error deleting post:', err.response?.data || err.message);
+                            Alert.alert('Error', 'Failed to delete post.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleDeleteComment = async (postId, commentId) => {
+        Alert.alert(
+            'Delete Comment',
+            'Are you sure you want to delete this comment?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const userString = await AsyncStorage.getItem('user');
+                        const userData = userString ? JSON.parse(userString) : null;
+                        if (!userData || !userData.token) {
+                            Alert.alert('Error', 'You must be logged in to delete a comment.');
+                            return;
+                        }
+
+                        try {
+                            const token = userData.token;
+                            await contentService.deleteCommunityComment(postId, commentId, token);
+                            setCommunityPosts(communityPosts.map(post => {
+                                if (post._id === postId) {
+                                    return {
+                                        ...post,
+                                        comments: post.comments.filter(c => c._id !== commentId),
+                                    };
+                                }
+                                return post;
+                            }));
+                            Alert.alert('Success', 'Comment deleted successfully!');
+                        } catch (err) {
+                            console.error('Error deleting comment:', err.response?.data || err.message);
+                            Alert.alert('Error', 'Failed to delete comment.');
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const handleCreatePlaylist = async () => {
@@ -593,6 +702,9 @@ export default function CreatorChannel() {
                                     user={loggedInUser}
                                     onLike={handleLike}
                                     onCommentSubmit={handleCommentSubmit}
+                                    onDeletePost={handleDeletePost}
+                                    onEditPost={handleOpenEditPostModal}
+                                    onDeleteComment={handleDeleteComment}
                                 />
                             </View>
                         )}
@@ -812,6 +924,16 @@ export default function CreatorChannel() {
           onClose={() => setShowAddVideoModal(false)}
           videos={videos}
           onAddVideo={handleAddVideoToPlaylist}
+        />
+      )}
+
+      {isOwner && editingPost && (
+        <EditPostModal
+            isOpen={showEditPostModal}
+            onClose={() => setShowEditPostModal(false)}
+            post={editingPost}
+            setPost={setEditingPost}
+            onSave={handleUpdatePost}
         />
       )}
     </View>

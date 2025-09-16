@@ -3,18 +3,33 @@ import { View, Text, Image, Pressable, StyleSheet, TextInput } from 'react-nativ
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faHeart, faComment } from '@fortawesome/free-solid-svg-icons';
 
-const CommunityPostCard = ({ post, user, onLike, onCommentSubmit }) => {
+import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+
+const CommunityPostCard = ({ post, user, onLike, onCommentSubmit, onDeletePost, onEditPost, onDeleteComment }) => {
     const [comment, setComment] = React.useState('');
     const isLiked = post.likes.includes(user?._id);
+    const isOwner = user?._id === post.user._id;
 
     return (
         <View style={styles.card}>
             <View style={styles.header}>
-                <Image source={{ uri: post.user.profileImage }} style={styles.profileImage} />
-                <View>
-                    <Text style={styles.userName}>{post.user.name}</Text>
-                    <Text style={styles.timestamp}>{new Date(post.timestamp).toLocaleDateString()}</Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <Image source={{ uri: post.user.profileImage }} style={styles.profileImage} />
+                    <View>
+                        <Text style={styles.userName}>{post.user.name}</Text>
+                        <Text style={styles.timestamp}>{new Date(post.timestamp).toLocaleDateString()}</Text>
+                    </View>
                 </View>
+                {isOwner && (
+                    <View style={{flexDirection: 'row'}}>
+                        <Pressable onPress={() => onEditPost(post)} style={{marginRight: 10}}>
+                            <FontAwesomeIcon icon={faEdit} style={styles.icon} />
+                        </Pressable>
+                        <Pressable onPress={() => onDeletePost(post._id)}>
+                            <FontAwesomeIcon icon={faTrash} style={styles.icon} />
+                        </Pressable>
+                    </View>
+                )}
             </View>
             <Text style={styles.content}>{post.content}</Text>
             <View style={styles.actions}>
@@ -28,11 +43,19 @@ const CommunityPostCard = ({ post, user, onLike, onCommentSubmit }) => {
                 </View>
             </View>
             <View style={styles.commentsSection}>
-                {post.comments.map((c) => (
-                    <View key={c._id} style={styles.comment}>
-                        <Text style={styles.commentText}>{c.content}</Text>
-                    </View>
-                ))}
+                {post.comments.map((c) => {
+                    const canDeleteComment = user?._id === c.user._id || isOwner;
+                    return (
+                        <View key={c._id} style={styles.comment}>
+                            <Text style={styles.commentText}>{c.content}</Text>
+                            {canDeleteComment && (
+                                <Pressable onPress={() => onDeleteComment(post._id, c._id)}>
+                                    <FontAwesomeIcon icon={faTrash} style={styles.icon} size={12} />
+                                </Pressable>
+                            )}
+                        </View>
+                    );
+                })}
             </View>
             <View style={styles.commentForm}>
                 <TextInput
@@ -60,6 +83,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
+        justifyContent: 'space-between',
     },
     profileImage: {
         width: 40,
@@ -106,6 +130,9 @@ const styles = StyleSheet.create({
     },
     comment: {
         marginBottom: 5,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     commentText: {
         color: 'white',

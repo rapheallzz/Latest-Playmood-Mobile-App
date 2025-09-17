@@ -64,14 +64,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     width: '80%',
   },
   button: {
     backgroundColor: '#541011',
     paddingVertical: 15,
-    borderRadius: 25,
+    paddingHorizontal: 30,
+    borderRadius: 50,
     alignItems: 'center',
-    marginBottom: 15,
   },
   signUpButton: {
     backgroundColor: '#541011',

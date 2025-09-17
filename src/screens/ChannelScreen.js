@@ -588,10 +588,10 @@ export default function CreatorChannel() {
             )}
 
             <View style={styles.navLinks}>
-                <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={styles.navLink}>VIDEOS</Text></Pressable>
-                <Pressable onPress={() => handleTabClick('PLAYLISTS')}><Text style={styles.navLink}>PLAYLIST</Text></Pressable>
-                <Pressable onPress={() => handleTabClick('COMMUNITY')}><Text style={styles.navLink}>COMMUNITY</Text></Pressable>
-                <Pressable onPress={() => handleTabClick('ABOUT')}><Text style={styles.navLink}>ABOUT</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={[styles.navLink, activeTab === 'VIDEOS' && styles.activeNavLink]}>VIDEOS</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('PLAYLISTS')}><Text style={[styles.navLink, activeTab === 'PLAYLISTS' && styles.activeNavLink]}>PLAYLIST</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('COMMUNITY')}><Text style={[styles.navLink, activeTab === 'COMMUNITY' && styles.activeNavLink]}>COMMUNITY</Text></Pressable>
+                <Pressable onPress={() => handleTabClick('ABOUT')}><Text style={[styles.navLink, activeTab === 'ABOUT' && styles.activeNavLink]}>ABOUT</Text></Pressable>
             </View>
         </>
     );
@@ -997,6 +997,9 @@ const styles = StyleSheet.create({
   navLink: {
     color: 'white',
     fontSize: 14,
+  },
+  activeNavLink: {
+    color: '#541011',
   },
   contentSection: {
     paddingHorizontal: 20,

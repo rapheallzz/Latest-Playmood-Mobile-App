@@ -24,6 +24,7 @@ export const register = createAsyncThunk('auth/register', async (user, thunkAPI)
     const response = await authService.register(user);
     console.log('Registration successful:', response);
     thunkAPI.dispatch(setUser(response));  // Dispatch setUser action
+    await AsyncStorage.setItem('userToken', response.token);
     return response;
   } catch (error) {
     const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
@@ -36,6 +37,7 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
     const response = await authService.login(user);
     console.log('Login successful:', response);
     thunkAPI.dispatch(setUser(response)); // Dispatch setUser action
+    await AsyncStorage.setItem('userToken', response.token);
     return response;
   } catch (error) {
     console.error('Login failed:', error);
@@ -47,6 +49,19 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
 export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
   await authService.logout();
   thunkAPI.dispatch(clearUser());  // Clear user state on logout
+  await AsyncStorage.removeItem('userToken');
+});
+
+export const checkUserLoggedIn = createAsyncThunk('auth/checkUserLoggedIn', async (_, thunkAPI) => {
+  try {
+    const userToken = await AsyncStorage.getItem('userToken');
+    if (userToken) {
+      thunkAPI.dispatch(setUser({ token: userToken }));
+      return userToken;
+    }
+  } catch (error) {
+    console.error('Failed to fetch user token from storage', error);
+  }
 });
 
 
@@ -96,6 +111,9 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.userToken = null;
+      })
+      .addCase(checkUserLoggedIn.fulfilled, (state, action) => {
+        state.userToken = action.payload;
       });
   },
 });

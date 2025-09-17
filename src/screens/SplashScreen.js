@@ -2,17 +2,33 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, Image, Text } from 'react-native';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import { checkUserLoggedIn } from '../features/authSlice';
 
 export default function SplashScreen() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { userToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
+    dispatch(checkUserLoggedIn());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const navigateUser = () => {
+      if (userToken) {
+        navigation.navigate('Home');
+      } else {
+        navigation.navigate('Welcome');
+      }
+    };
+
     const timer = setTimeout(() => {
-      navigation.navigate('Home');
+      navigateUser();
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, userToken]);
 
   return (
     <View style={styles.container}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Text, Image, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Image, Pressable, Alert, Linking } from 'react-native';
 import MobileHeader from '../components/MobileHeader';
 import LikeSlider from '../components/LikeSlider';
 import ForYouSlider from '../components/ForYouSlider';
@@ -125,7 +125,7 @@ export default function Dashboard() {
         {/* Admin-only button */}
         {user?.role === 'admin' && (
           <View style={styles.adminButtons}>
-            <Pressable style={styles.adminButton} onPress={() => navigation.navigate('AdminPage')}>
+            <Pressable style={styles.adminButton} onPress={() => Linking.openURL('https://playmoodtv.com/admin')}>
               <Text style={styles.buttonText}>Admin Page</Text>
             </Pressable>
           </View>

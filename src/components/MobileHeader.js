@@ -314,10 +314,9 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     position: 'absolute',
-    top: 140, // Adjust based on header height
+    top: 140, 
     left: 0,
     height: '100%',
-    width: 200,
     zIndex: 1000,
     paddingVertical: 20,
     backgroundColor: 'black',
@@ -338,6 +337,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    
   },
   modalContainer: {
     width: 300,

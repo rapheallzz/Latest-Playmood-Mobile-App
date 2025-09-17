@@ -588,10 +588,18 @@ export default function CreatorChannel() {
             )}
 
             <View style={styles.navLinks}>
-                <Pressable onPress={() => handleTabClick('VIDEOS')}><Text style={[styles.navLink, activeTab === 'VIDEOS' && styles.activeNavLink]}>VIDEOS</Text></Pressable>
-                <Pressable onPress={() => handleTabClick('PLAYLISTS')}><Text style={[styles.navLink, activeTab === 'PLAYLISTS' && styles.activeNavLink]}>PLAYLIST</Text></Pressable>
-                <Pressable onPress={() => handleTabClick('COMMUNITY')}><Text style={[styles.navLink, activeTab === 'COMMUNITY' && styles.activeNavLink]}>COMMUNITY</Text></Pressable>
-                <Pressable onPress={() => handleTabClick('ABOUT')}><Text style={[styles.navLink, activeTab === 'ABOUT' && styles.activeNavLink]}>ABOUT</Text></Pressable>
+                <Pressable style={[styles.tab, activeTab === 'VIDEOS' && styles.activeTab]} onPress={() => handleTabClick('VIDEOS')}>
+                    <Text style={styles.navLink}>VIDEOS</Text>
+                </Pressable>
+                <Pressable style={[styles.tab, activeTab === 'PLAYLISTS' && styles.activeTab]} onPress={() => handleTabClick('PLAYLISTS')}>
+                    <Text style={styles.navLink}>PLAYLIST</Text>
+                </Pressable>
+                <Pressable style={[styles.tab, activeTab === 'COMMUNITY' && styles.activeTab]} onPress={() => handleTabClick('COMMUNITY')}>
+                    <Text style={styles.navLink}>COMMUNITY</Text>
+                </Pressable>
+                <Pressable style={[styles.tab, activeTab === 'ABOUT' && styles.activeTab]} onPress={() => handleTabClick('ABOUT')}>
+                    <Text style={styles.navLink}>ABOUT</Text>
+                </Pressable>
             </View>
         </>
     );
@@ -994,12 +1002,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginVertical: 20,
   },
+  tab: {
+    padding: 10,
+    borderRadius: 5,
+  },
+  activeTab: {
+    backgroundColor: '#541011',
+  },
   navLink: {
     color: 'white',
     fontSize: 14,
-  },
-  activeNavLink: {
-    color: '#541011',
+    textAlign: 'center',
   },
   contentSection: {
     paddingHorizontal: 20,

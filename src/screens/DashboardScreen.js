@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text, Image, Pressable, Alert } from 'react-native';
 import MobileHeader from '../components/MobileHeader';
 import LikeSlider from '../components/LikeSlider';
@@ -7,23 +7,74 @@ import FriendSlider from '../components/FriendSlider';
 import FavoriteSlider from '../components/FavoriteSlider';
 import WatchlistSlider from '../components/WatchlistSlider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faHistory, faCookieBite, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faHistory, faCookieBite, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import tw from 'tailwind-react-native-classnames'; 
 import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../features/authSlice';
+import { logout, setUser } from '../features/authSlice';
 import { useNavigation } from '@react-navigation/native';
+import EditProfileModal from '../components/EditProfileModal';
+import axios from 'axios';
 
 export default function Dashboard() {
   const [sliderType, setSliderType] = useState('likes');
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [name, setName] = useState(user?.name);
+  const [email, setEmail] = useState(user?.email);
+  const [profileImage, setProfileImage] = useState(user?.profileImage);
+  const [profileImageFile, setProfileImageFile] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+      setProfileImage(user.profileImage);
+    }
+  }, [user]);
 
   const handleLogout = () => {
     dispatch(logout()).then(() => {
       navigation.navigate('Login');
       console.log('logout success');
     });
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to update your profile.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+    if (profileImageFile) {
+      const uriParts = profileImageFile.uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      formData.append('profileImage', {
+        uri: profileImageFile.uri,
+        name: `photo.${fileType}`,
+        type: `image/${fileType}`,
+      });
+    }
+
+    try {
+      const response = await axios.put(`https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/users/${user._id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+      dispatch(setUser({ ...user, ...response.data }));
+      setIsModalOpen(false);
+      Alert.alert('Success', 'Profile updated successfully.');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to update profile.');
+    }
   };
 
   const renderSlider = () => {
@@ -48,13 +99,28 @@ export default function Dashboard() {
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
         <View style={styles.profileContainer}>
-          <Image source={{ uri: user?.profileImage }} style={styles.profileImage} />
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.changeAccount}>Edit Profile</Text>
+          <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          <Text style={styles.userName}>{name}</Text>
+          <Pressable style={styles.editProfileButton} onPress={() => setIsModalOpen(true)}>
+            <Text style={styles.changeAccount}>Edit Profile</Text>
+            <Image source={require('../../assets/edit.png')} style={{width: 15, height: 15, tintColor: 'white', marginLeft: 5}} />
+          </Pressable>
           <Pressable style={styles.logOut} onPress={handleLogout}>
             <Text style={styles.buttonText}>Logout</Text>
           </Pressable>
         </View>
+
+        <EditProfileModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          userName={name}
+          setUserName={setName}
+          email={email}
+          setEmail={setEmail}
+          profileImage={profileImage}
+          setProfileImageFile={setProfileImageFile}
+          handleUpdateProfile={handleUpdateProfile}
+        />
 
         {/* Admin-only button */}
         {user?.role === 'admin' && (
@@ -139,6 +205,11 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
+  editProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
   boxInnerText: {
     fontSize: 16,
     color: 'white',

@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
   },
   welcomeImage: {
     width: 250,
@@ -45,10 +45,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#fff',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#ccc',
     marginBottom: 40,
     textAlign: 'center',
     paddingHorizontal: 20,
@@ -57,14 +58,14 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   button: {
-    backgroundColor: '#FF6347',
+    backgroundColor: '#541011',
     paddingVertical: 15,
     borderRadius: 25,
     alignItems: 'center',
     marginBottom: 15,
   },
   signUpButton: {
-    backgroundColor: '#4682B4',
+    backgroundColor: '#541011',
   },
   buttonText: {
     color: '#fff',

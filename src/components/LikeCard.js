@@ -33,7 +33,15 @@ const LikeCard = () => {
   const currentContent = data[contentIndex];
 
   const handlePlayPress = () => {
-    navigation.navigate('VideoScreen', { content: currentContent });
+    if (currentContent) {
+      navigation.navigate('VideoScreen', {
+        _id: currentContent._id,
+        title: currentContent.title,
+        credits: currentContent.credits,
+        desc: currentContent.desc,
+        movie: currentContent.movie,
+      });
+    }
   };
 
   return (

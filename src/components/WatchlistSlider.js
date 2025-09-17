@@ -3,21 +3,19 @@ import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-nat
 import Carousel from 'react-native-snap-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchWatchlistContent } from '../features/contentSlice';
+import { fetchLikedContent } from '../features/contentSlice';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const WatchlistSlider = () => {
-  const dispatch = useDispatch();
-  const { watchlist, isLoading, isError, message } = useSelector(state => state.content);
+   const dispatch = useDispatch();
+  const { likes, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
-    if (user && user._id) {
-      dispatch(fetchWatchlistContent(user._id));
-    }
-  }, [dispatch, user]);
+    dispatch(fetchLikedContent());
+  }, [dispatch]);
 
   if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;
@@ -32,7 +30,7 @@ const WatchlistSlider = () => {
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-          data={watchlist}
+          data={likes}
           renderItem={({ item }) => <ContentCard item={item} />}
           sliderWidth={screenWidth}
           itemWidth={screenWidth * 0.8}

@@ -87,8 +87,8 @@ export default function Dashboard() {
         return <WatchlistSlider />;
       case 'forYou':
         return <ForYouSlider />;
-      case 'friends':
-        return <FriendSlider />;
+      // case 'friends':
+      //   return <FriendSlider />;
       default:
         return <LikeSlider />;
     }

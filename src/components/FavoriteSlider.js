@@ -3,21 +3,19 @@ import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-nat
 import Carousel from 'react-native-snap-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchFavoriteContent } from '../features/contentSlice';
+import { fetchLikedContent } from '../features/contentSlice';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const FavoriteSlider = () => {
   const dispatch = useDispatch();
-  const { favorites, isLoading, isError, message } = useSelector(state => state.content);
+  const { likes, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
-    if (user && user._id) {
-      dispatch(fetchFavoriteContent(user._id));
-    }
-  }, [dispatch, user]);
+    dispatch(fetchLikedContent());
+  }, [dispatch]);
 
   if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;
@@ -32,7 +30,7 @@ const FavoriteSlider = () => {
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-          data={favorites}
+          data={likes}
           renderItem={({ item }) => <ContentCard item={item} />}
           sliderWidth={screenWidth}
           itemWidth={screenWidth * 0.8}

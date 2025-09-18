@@ -8,6 +8,7 @@ import playmood from '../../assets/PLAYMOOD_DEF.png';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { isLoading, isError, isSuccess, message } = useSelector(state => state.auth);
@@ -32,13 +33,18 @@ export default function LoginScreen() {
           value={email}
           keyboardType="email-address"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          onChangeText={text => setPassword(text)}
-          value={password}
-          secureTextEntry
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Password"
+            onChangeText={text => setPassword(text)}
+            value={password}
+            secureTextEntry={!isPasswordVisible}
+          />
+          <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.showButton}>
+            <Text style={styles.showButtonText}>{isPasswordVisible ? 'Hide' : 'Show'}</Text>
+          </Pressable>
+        </View>
         <Pressable style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
           <Text style={styles.loginButtonText}>{isLoading ? 'Logging in...' : 'Login'}</Text>
         </Pressable>
@@ -74,6 +80,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     padding: 10,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    backgroundColor: 'white',
+    borderRadius: 5,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 15,
+    padding: 10,
+  },
+  showButton: {
+    padding: 10,
+  },
+  showButtonText: {
+    color: '#541011',
+    fontWeight: 'bold',
   },
   loginButton: {
     backgroundColor: '#541011',

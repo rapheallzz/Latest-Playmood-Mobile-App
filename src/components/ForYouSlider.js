@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
-import Carousel from 'react-native-snap-carousel';
+import Carousel from 'react-native-reanimated-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent } from '../features/contentSlice';
@@ -31,11 +31,11 @@ const ForYouSlider = () => {
         <Carousel
           data={contentList}
           renderItem={({ item }) => <ContentCard item={item} />}
-          sliderWidth={screenWidth}
-          itemWidth={screenWidth * 0.8}
+          width={screenWidth}
+          height={350}
           loop={true}
-          autoplay={true}
-          autoplayInterval={3000}
+          autoPlay={true}
+          autoPlayInterval={3000}
         />
       )}
     </View>

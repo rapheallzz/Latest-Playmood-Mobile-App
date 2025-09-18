@@ -46,8 +46,15 @@ export const checkUserLoggedIn = createAsyncThunk('auth/checkUserLoggedIn', asyn
     const userToken = await AsyncStorage.getItem('userToken');
     if (userToken) {
       const user = await authService.getUser(userToken);
-      thunkAPI.dispatch(setUser(user));
-      return { user, token: userToken };
+      if (user) {
+        thunkAPI.dispatch(setUser(user));
+        return { user, token: userToken };
+      }
+      // If user is null, treat as logged out
+      await authService.logout();
+      thunkAPI.dispatch(clearUser());
+      await AsyncStorage.removeItem('userToken');
+      return null;
     }
     return null;
   } catch (error) {

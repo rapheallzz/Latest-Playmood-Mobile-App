@@ -11,29 +11,24 @@ export default function SplashScreen() {
   const { userToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const resultAction = await dispatch(checkUserLoggedIn());
-        if (checkUserLoggedIn.fulfilled.match(resultAction)) {
-          if (resultAction.payload) {
-            navigation.navigate('Home');
-          } else {
-            navigation.navigate('Welcome');
-          }
-        } else {
-          navigation.navigate('Welcome');
-        }
-      } catch (error) {
+    dispatch(checkUserLoggedIn());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const navigateUser = () => {
+      if (userToken) {
+        navigation.navigate('Home');
+      } else {
         navigation.navigate('Welcome');
       }
     };
 
     const timer = setTimeout(() => {
-      checkAuthStatus();
+      navigateUser();
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [dispatch, navigation]);
+  }, [navigation, userToken]);
 
   return (
     <View style={styles.container}>

@@ -41,10 +41,27 @@ const logout = async () => {
   await AsyncStorage.removeItem('user');
 };
 
+// Get user
+const getUser = async (token) => {
+  try {
+    const response = await axios.get(API_URL + 'me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Get user failed:', error);
+    throw error;
+  }
+};
+
 const authService = {
   register,
   logout,
   login,
+  getUser,
 };
 
 export default authService;

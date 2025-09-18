@@ -1,13 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from './authService';
-import { setUser } from '../features/userSlice';  // Import setUser action
+import { setUser, clearUser } from '../features/userSlice';  // Import setUser and clearUser actions
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Get user from AsyncStorage
-// const getUserFromStorage = async () => {
-//   const user = await AsyncStorage.getItem('user');
-//   return user ? JSON.parse(user) : null;
-// };
 
 const initialState = {
   user: null,
@@ -16,14 +10,12 @@ const initialState = {
   isSuccess: false,
   isLoading: false,
   message: '',
-
 };
 
 export const register = createAsyncThunk('auth/register', async (user, thunkAPI) => {
   try {
     const response = await authService.register(user);
-    console.log('Registration successful:', response);
-    thunkAPI.dispatch(setUser(response));  // Dispatch setUser action
+    thunkAPI.dispatch(setUser(response));
     await AsyncStorage.setItem('userToken', response.token);
     return response;
   } catch (error) {
@@ -35,20 +27,17 @@ export const register = createAsyncThunk('auth/register', async (user, thunkAPI)
 export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
   try {
     const response = await authService.login(user);
-    console.log('Login successful:', response);
-    thunkAPI.dispatch(setUser(response)); // Dispatch setUser action
+    thunkAPI.dispatch(setUser(response));
     await AsyncStorage.setItem('userToken', response.token);
     return response;
   } catch (error) {
-    console.error('Login failed:', error);
     return thunkAPI.rejectWithValue(error.message || 'Login failed');
   }
 });
 
-
 export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
   await authService.logout();
-  thunkAPI.dispatch(clearUser());  // Clear user state on logout
+  thunkAPI.dispatch(clearUser());
   await AsyncStorage.removeItem('userToken');
 });
 
@@ -56,14 +45,18 @@ export const checkUserLoggedIn = createAsyncThunk('auth/checkUserLoggedIn', asyn
   try {
     const userToken = await AsyncStorage.getItem('userToken');
     if (userToken) {
-      thunkAPI.dispatch(setUser({ token: userToken }));
-      return userToken;
+      const user = await authService.getUser(userToken);
+      thunkAPI.dispatch(setUser(user));
+      return { user, token: userToken };
     }
+    return null;
   } catch (error) {
-    console.error('Failed to fetch user token from storage', error);
+    await authService.logout();
+    thunkAPI.dispatch(clearUser());
+    await AsyncStorage.removeItem('userToken');
+    return thunkAPI.rejectWithValue('Failed to fetch user data');
   }
 });
-
 
 const authSlice = createSlice({
   name: 'auth',
@@ -81,7 +74,7 @@ const authSlice = createSlice({
       .addCase(register.pending, (state) => {
         state.isLoading = true;
       })
-       .addCase(register.fulfilled, (state, action) => {
+      .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
@@ -96,7 +89,7 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.isLoading = true;
       })
-       .addCase(login.fulfilled, (state, action) => {
+      .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
@@ -113,7 +106,17 @@ const authSlice = createSlice({
         state.userToken = null;
       })
       .addCase(checkUserLoggedIn.fulfilled, (state, action) => {
-        state.userToken = action.payload;
+        if (action.payload) {
+          state.user = action.payload.user;
+          state.userToken = action.payload.token;
+        } else {
+          state.user = null;
+          state.userToken = null;
+        }
+      })
+      .addCase(checkUserLoggedIn.rejected, (state) => {
+        state.user = null;
+        state.userToken = null;
       });
   },
 });

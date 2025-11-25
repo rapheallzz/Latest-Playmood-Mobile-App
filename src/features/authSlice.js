@@ -105,7 +105,11 @@ const authSlice = createSlice({
         state.user = null;
         state.userToken = null;
       })
+      .addCase(checkUserLoggedIn.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(checkUserLoggedIn.fulfilled, (state, action) => {
+        state.isLoading = false;
         if (action.payload) {
           state.user = action.payload.user;
           state.userToken = action.payload.token;
@@ -115,6 +119,7 @@ const authSlice = createSlice({
         }
       })
       .addCase(checkUserLoggedIn.rejected, (state) => {
+        state.isLoading = false;
         state.user = null;
         state.userToken = null;
       });

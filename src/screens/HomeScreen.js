@@ -15,26 +15,35 @@ import Social from '../components/Social';
 import Report from '../components/Report';
 import Teen from '../components/Teen';
 import tw from 'tailwind-react-native-classnames';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchContent } from '../features/contentSlice';
 import Behind from '../components/Behind';
 
 const { width } = Dimensions.get('window');
 const isTV = width >= 1024;
 
 export default function HomeScreen() {
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   const [likecard, setLikeCard] = useState([1]);
   const user = useSelector((state) => state.user);
+  const { contentList, isLoading } = useSelector((state) => state.content);
 
   const handleTop10Press = () => {
-    navigation.navigate('ContentDetails'); 
+    navigation.navigate('ContentDetails');
   };
 
   useEffect(() => {
-    if (!user.id) {
-      navigation.navigate('Login');
-    }
-  }, [user.id, navigation]);
+    dispatch(fetchContent());
+  }, [dispatch]);
+
+  if (isLoading) {
+    return (
+      <View style={tw`flex-1 justify-center items-center bg-black`}>
+        <Text style={tw`text-white`}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={tw`flex-1 bg-black`}>

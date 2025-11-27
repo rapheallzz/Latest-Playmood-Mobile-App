@@ -4,29 +4,9 @@ import ContentCard from './ContentCard';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const Top10Slider = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const response = await fetch('https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content/');
-      const jsonData = await response.json();
-      const top10Data = jsonData.filter(item => item.category === 'Top 10').slice(0, 10);
-      setData(top10Data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return <ActivityIndicator size="large" color="#fff" />;
+const Top10Slider = ({ data }) => {
+  if (!data || data.length === 0) {
+    return null;
   }
 
   return (

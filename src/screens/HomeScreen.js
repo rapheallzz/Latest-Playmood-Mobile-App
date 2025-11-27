@@ -50,15 +50,43 @@ export default function HomeScreen() {
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={tw`flex-1 ml-10`}>
         <LikeCard data={likecard} />
-        <View style={tw`flex mt-10`}> 
-          {[Top10Slider, NewOn, Channel, Diaries, Spaces, Recommended, Interview, Fashion, Social, Report, Behind, Teen].map((Component, index) => (
-            <Pressable 
-              key={index} 
-              onPress={handleTop10Press} 
-              style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}> 
-              <Component /> 
-            </Pressable>
-          ))}
+        <View style={tw`flex mt-10`}>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Top10Slider data={contentList.filter(item => item.category === 'Top 10')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <NewOn data={contentList.filter(item => item.category === 'New On Playmood')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Channel data={contentList.filter(item => item.category === 'Channels')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Diaries data={contentList.filter(item => item.category === 'Diaries')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Spaces data={contentList.filter(item => item.category === 'Spaces')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Recommended data={contentList.filter(item => item.category === 'Recommended')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Interview data={contentList.filter(item => item.category === 'Interviews')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Fashion data={contentList.filter(item => item.category === 'Fashion')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Social data={contentList.filter(item => item.category === 'Social')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Report data={contentList.filter(item => item.category === 'Reports')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Behind data={contentList.filter(item => item.category === 'Behind the Scenes')} />
+          </Pressable>
+          <Pressable onPress={handleTop10Press} style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+            <Teen data={contentList.filter(item => item.category === 'Teen')} />
+          </Pressable>
         </View>
       </ScrollView>
     </View>

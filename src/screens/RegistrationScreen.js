@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Pressable, Text, Image, ScrollView } from 'react-native';
-import playmood from '../../assets/PLAYMOOD_DEF.png';
+import { View, StyleSheet, TextInput, Pressable, Text, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { register, registerStart, registerSuccess, registerFailure } from '../features/authSlice';
+import { register, registerStart } from '../features/authSlice';
+import DynamicImage from '../components/DynamicImage';
 
 export default function RegistrationScreen() {
   const [name, setName] = useState('');
@@ -11,12 +11,12 @@ export default function RegistrationScreen() {
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const { isLoading, isError, isSuccess, message } = useSelector(state => state.auth);
+  const { isLoading, isError, message } = useSelector(state => state.auth);
 
   const handleRegister = async () => {
     dispatch(registerStart());
     try {
-      await dispatch(register(name, email, password)); // Updated to pass name, email, and password
+      await dispatch(register(name, email, password));
       navigation.navigate('Home');
     } catch (error) {
       console.log('Registration error:', error);
@@ -25,8 +25,8 @@ export default function RegistrationScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
-        <Image source={playmood} style={styles.logo} />
+      <DynamicImage />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formContainer}>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -61,19 +61,14 @@ export default function RegistrationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: 'row',
     backgroundColor: 'black',
   },
-  content: {
-    width: '100%',
-    marginLeft:70,
-    marginTop:120,
-  },
-  logo: {
-    width: 310,
-    height: 80,
-    marginBottom: 20,
+  formContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   inputContainer: {
     width: '80%',

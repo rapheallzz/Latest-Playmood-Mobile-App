@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, FlatList, Linking } from 'react-native';
 import ContentCard from '../components/ContentCard';
 import CommunityPostCard from '../components/CommunityPostCard';
@@ -90,7 +90,7 @@ export default function CreatorChannel() {
     const [showCreateFeedPostModal, setShowCreateFeedPostModal] = useState(false);
     const [showFeedPostViewerModal, setShowFeedPostViewerModal] = useState(false);
     const [selectedFeedPost, setSelectedFeedPost] = useState(null);
-    const { feeds, createFeedPost } = useFeeds(loggedInUser, creatorId);
+    const { feeds, createFeedPost, fetchFeeds } = useFeeds(loggedInUser, creatorId);
 
 
     const fetchPlaylists = async () => {
@@ -642,115 +642,6 @@ export default function CreatorChannel() {
         </>
     );
 
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'FEEDS':
-                return (
-                    <FeedSection
-                        user={loggedInUser}
-                        creatorId={creatorId}
-                        onPostClick={(post, index) => {
-                            setSelectedFeedPost({ ...post, index });
-                            setShowFeedPostViewerModal(true);
-                        }}
-                    />
-                );
-            case 'VIDEOS':
-                return (
-                    <View style={styles.contentSection}>
-                        <Text style={styles.contentTitle}>Videos</Text>
-                        <FlatList
-                                data={videos}
-                                renderItem={({ item }) => <ContentCard item={item} />}
-                                keyExtractor={(item) => item._id}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                            />
-                        </View>
-                    </ScrollView>
-                );
-            case 'PLAYLISTS':
-                if (isLoadingPlaylists) {
-                    return <View><ActivityIndicator size="large" color="#fff" /></View>;
-                }
-                return (
-                    <FlatList
-                        ListHeaderComponent={header}
-                        data={playlists}
-                        keyExtractor={(item) => item._id.toString()}
-                        renderItem={({ item: playlist }) => (
-                            <View style={styles.contentSection}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Text style={styles.contentTitle}>{playlist.name}</Text>
-                                    {isOwner && (
-                                        <View style={{ flexDirection: 'row' }}>
-                                            <Pressable onPress={() => handleOpenAddVideoModal(playlist)} style={{ marginRight: 10 }}><FontAwesome name="plus" size={20} color="white" /></Pressable>
-                                            <Pressable onPress={() => handleOpenEditPlaylistModal(playlist)} style={{ marginRight: 10 }}><FontAwesome name="edit" size={20} color="white" /></Pressable>
-                                            <Pressable onPress={() => handleDeletePlaylist(playlist._id)}><FontAwesome name="trash" size={20} color="white" /></Pressable>
-                                        </View>
-                                    )}
-                                </View>
-                                {playlist.videos.length > 0 ? (
-                                    <FlatList
-                                        data={playlist.videos}
-                                        renderItem={({ item }) => <ContentCard item={item} />}
-                                        keyExtractor={(item) => item._id.toString()}
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                    />
-                                ) : (
-                                    <Text style={styles.errorText}>This playlist has no videos.</Text>
-                                )}
-                            </View>
-                        )}
-                    />
-                );
-            case 'COMMUNITY':
-                if (isLoadingPosts) {
-                    return <View><ActivityIndicator size="large" color="#fff" /></View>;
-                }
-                return (
-                    <FlatList
-                        ListHeaderComponent={header}
-                        data={communityPosts}
-                        keyExtractor={(item) => item._id}
-                        renderItem={({ item }) => (
-                            <View style={styles.contentSection}>
-                                <CommunityPostCard
-                                    post={item}
-                                    user={loggedInUser}
-                                    onLike={handleLike}
-                                    onCommentSubmit={handleCommentSubmit}
-                                    onDeletePost={handleDeletePost}
-                                    onEditPost={handleOpenEditPostModal}
-                                    onDeleteComment={handleDeleteComment}
-                                />
-                            </View>
-                        )}
-                    />
-                );
-            case 'ABOUT':
-                return (
-                    <ScrollView>
-                        {header}
-                        <View style={styles.contentSection}>
-                            <Text style={styles.contentTitle}>About</Text>
-                            <Text style={styles.aboutText}>{creatorData?.about}</Text>
-                            <Text style={styles.contentTitle}>Connect</Text>
-                            <View style={styles.socialIcons}>
-                                {creatorData?.twitter && (<Pressable onPress={() => Linking.openURL(creatorData.twitter)}><FontAwesome name="twitter" size={24} color="white" /></Pressable>)}
-                                {creatorData?.instagram && (<Pressable onPress={() => Linking.openURL(creatorData.instagram)}><FontAwesome name="instagram" size={24} color="white" /></Pressable>)}
-                                {creatorData?.linkedin && (<Pressable onPress={() => Linking.openURL(creatorData.linkedin)}><FontAwesome name="linkedin" size={24} color="white" /></Pressable>)}
-                                {creatorData?.tiktok && (<Pressable onPress={() => Linking.openURL(creatorData.tiktok)}><FontAwesome name="tiktok" size={24} color="white" /></Pressable>)}
-                            </View>
-                        </View>
-                    </ScrollView>
-                );
-            default:
-                return null;
-        }
-    };
-
     const handleSubscribeClick = async () => {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
@@ -879,123 +770,240 @@ export default function CreatorChannel() {
         </View>
       );
     }
-  
+
+    const renderContent = () => {
+        if (activeTab === 'VIDEOS') {
+            return (
+                <View style={styles.contentSection}>
+                    <Text style={styles.contentTitle}>Videos</Text>
+                    <FlatList
+                        data={videos}
+                        renderItem={({ item }) => <ContentCard item={item} />}
+                        keyExtractor={(item) => item._id}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                    />
+                </View>
+            );
+        }
+        if (activeTab === 'ABOUT') {
+            return (
+                <View style={styles.contentSection}>
+                    <Text style={styles.contentTitle}>About</Text>
+                    <Text style={styles.aboutText}>{creatorData?.about}</Text>
+                    <Text style={styles.contentTitle}>Connect</Text>
+                    <View style={styles.socialIcons}>
+                        {creatorData?.twitter && (<Pressable onPress={() => Linking.openURL(creatorData.twitter)}><FontAwesome name="twitter" size={24} color="white" /></Pressable>)}
+                        {creatorData?.instagram && (<Pressable onPress={() => Linking.openURL(creatorData.instagram)}><FontAwesome name="instagram" size={24} color="white" /></Pressable>)}
+                        {creatorData?.linkedin && (<Pressable onPress={() => Linking.openURL(creatorData.linkedin)}><FontAwesome name="linkedin" size={24} color="white" /></Pressable>)}
+                        {creatorData?.tiktok && (<Pressable onPress={() => Linking.openURL(creatorData.tiktok)}><FontAwesome name="tiktok" size={24} color="white" /></Pressable>)}
+                    </View>
+                </View>
+            );
+        }
+        return null;
+    };
+
+    const renderListContent = () => {
+        if (activeTab === 'FEEDS') {
+            return (
+                <FeedSection
+                    feeds={feeds}
+                    user={loggedInUser}
+                    creatorId={creatorId}
+                    onPostClick={(post, index) => {
+                        setSelectedFeedPost({ ...post, index });
+                        setShowFeedPostViewerModal(true);
+                    }}
+                />
+            );
+        }
+        if (activeTab === 'COMMUNITY') {
+            return (
+                <FlatList
+                    data={communityPosts}
+                    keyExtractor={(item) => item._id}
+                    renderItem={({ item }) => (
+                        <View style={styles.contentSection}>
+                            <CommunityPostCard
+                                post={item}
+                                user={loggedInUser}
+                                onLike={handleLike}
+                                onCommentSubmit={handleCommentSubmit}
+                                onDeletePost={handleDeletePost}
+                                onEditPost={handleOpenEditPostModal}
+                                onDeleteComment={handleDeleteComment}
+                            />
+                        </View>
+                    )}
+                />
+            );
+        }
+        if (activeTab === 'PLAYLISTS') {
+            if (isLoadingPlaylists) {
+                return <View><ActivityIndicator size="large" color="#fff" /></View>;
+            }
+            return (
+                <FlatList
+                    data={playlists}
+                    keyExtractor={(item) => item._id.toString()}
+                    renderItem={({ item: playlist }) => (
+                        <View style={styles.contentSection}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Text style={styles.contentTitle}>{playlist.name}</Text>
+                                {isOwner && (
+                                    <View style={{ flexDirection: 'row' }}>
+                                        <Pressable onPress={() => handleOpenAddVideoModal(playlist)} style={{ marginRight: 10 }}><FontAwesome name="plus" size={20} color="white" /></Pressable>
+                                        <Pressable onPress={() => handleOpenEditPlaylistModal(playlist)} style={{ marginRight: 10 }}><FontAwesome name="edit" size={20} color="white" /></Pressable>
+                                        <Pressable onPress={() => handleDeletePlaylist(playlist._id)}><FontAwesome name="trash" size={20} color="white" /></Pressable>
+                                    </View>
+                                )}
+                            </View>
+                            {playlist.videos.length > 0 ? (
+                                <FlatList
+                                    data={playlist.videos}
+                                    renderItem={({ item }) => <ContentCard item={item} />}
+                                    keyExtractor={(item) => item._id.toString()}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                />
+                            ) : (
+                                <Text style={styles.errorText}>This playlist has no videos.</Text>
+                            )}
+                        </View>
+                    )}
+                />
+            );
+        }
+        return null;
+    }
+
     return (
-      <ScrollView style={styles.container}>
-        {renderHeader()}
-        {renderContent()}
+        <View style={styles.container}>
+            {activeTab === 'VIDEOS' || activeTab === 'ABOUT' ? (
+                <ScrollView>
+                    {renderHeader()}
+                    {renderContent()}
+                </ScrollView>
+            ) : (
+                <FlatList
+                    ListHeaderComponent={renderHeader}
+                    data={[{ key: 'content' }]}
+                    renderItem={renderListContent}
+                />
+            )}
 
-        {isOwner && (
-            <CreateFeedPostModal
-                isOpen={showCreateFeedPostModal}
-                onClose={() => setShowCreateFeedPostModal(false)}
-                onCreateFeedPost={createFeedPost}
-            />
-        )}
+            {isOwner && (
+                <CreateFeedPostModal
+                    isOpen={showCreateFeedPostModal}
+                    onClose={() => setShowCreateFeedPostModal(false)}
+                    onCreateFeedPost={createFeedPost}
+                />
+            )}
 
-        {showFeedPostViewerModal && selectedFeedPost && (
-            <FeedPostViewerModal
-                post={selectedFeedPost}
-                onClose={() => {
-                    setShowFeedPostViewerModal(false);
-                    setSelectedFeedPost(null);
-                }}
-            />
-        )}
+            {showFeedPostViewerModal && selectedFeedPost && (
+                <FeedPostViewerModal
+                    post={selectedFeedPost}
+                    onClose={() => {
+                        setShowFeedPostViewerModal(false);
+                        setSelectedFeedPost(null);
+                    }}
+                />
+            )}
 
-        {isOwner && (
-            <CreateHighlightModal
-                isOpen={showCreateHighlightModal}
-                onClose={() => setShowCreateHighlightModal(false)}
-                onCreate={createHighlight}
-                availableVideos={videos}
-            />
-        )}
+            {isOwner && (
+                <CreateHighlightModal
+                    isOpen={showCreateHighlightModal}
+                    onClose={() => setShowCreateHighlightModal(false)}
+                    onCreate={createHighlight}
+                    availableVideos={videos}
+                />
+            )}
 
-        {showVerticalHighlightViewer && selectedHighlight && (
-            <VerticalHighlightViewer
-                highlights={highlights}
-                startIndex={selectedHighlight.index}
-                onClose={() => {
-                    setShowVerticalHighlightViewer(false);
-                    setSelectedHighlight(null);
-                }}
-            />
-        )}
+            {showVerticalHighlightViewer && selectedHighlight && (
+                <VerticalHighlightViewer
+                    highlights={highlights}
+                    startIndex={selectedHighlight.index}
+                    onClose={() => {
+                        setShowVerticalHighlightViewer(false);
+                        setSelectedHighlight(null);
+                    }}
+                />
+            )}
 
-        {isOwner && (
-        <EditChannelModal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          creatorName={name}
-          setCreatorName={setName}
-          about={about}
-          setAbout={setAbout}
-          instagram={instagram}
-          setInstagram={setInstagram}
-          tiktok={tiktok}
-          setTiktok={setTiktok}
-          linkedin={linkedin}
-          setLinkedin={setLinkedin}
-          twitter={twitter}
-          setTwitter={setTwitter}
-          bannerImage={bannerImageFile?.uri || creatorData?.bannerImage}
-          setBannerImageFile={setBannerImageFile}
-          handleUpdateChannelInfo={handleUpdateChannelInfo}
-        />
-      )}
+            {isOwner && (
+                <EditChannelModal
+                    isOpen={showEditModal}
+                    onClose={() => setShowEditModal(false)}
+                    creatorName={name}
+                    setCreatorName={setName}
+                    about={about}
+                    setAbout={setAbout}
+                    instagram={instagram}
+                    setInstagram={setInstagram}
+                    tiktok={tiktok}
+                    setTiktok={setTiktok}
+                    linkedin={linkedin}
+                    setLinkedin={setLinkedin}
+                    twitter={twitter}
+                    setTwitter={setTwitter}
+                    bannerImage={bannerImageFile?.uri || creatorData?.bannerImage}
+                    setBannerImageFile={setBannerImageFile}
+                    handleUpdateChannelInfo={handleUpdateChannelInfo}
+                />
+            )}
 
-      {isOwner && (
-        <CommunityPostModal
-          isOpen={showCommunityModal}
-          onClose={() => setShowCommunityModal(false)}
-          newPostContent={newPostContent}
-          setNewPostContent={setNewPostContent}
-          handleCreatePost={handleCreatePost}
-        />
-      )}
+            {isOwner && (
+                <CommunityPostModal
+                    isOpen={showCommunityModal}
+                    onClose={() => setShowCommunityModal(false)}
+                    newPostContent={newPostContent}
+                    setNewPostContent={setNewPostContent}
+                    handleCreatePost={handleCreatePost}
+                />
+            )}
 
-      {isOwner && (
-        <CreatePlaylistModal
-          isOpen={showPlaylistModal}
-          onClose={() => setShowPlaylistModal(false)}
-          newPlaylist={newPlaylist}
-          setNewPlaylist={setNewPlaylist}
-          handleCreatePlaylist={handleCreatePlaylist}
-        />
-      )}
+            {isOwner && (
+                <CreatePlaylistModal
+                    isOpen={showPlaylistModal}
+                    onClose={() => setShowPlaylistModal(false)}
+                    newPlaylist={newPlaylist}
+                    setNewPlaylist={setNewPlaylist}
+                    handleCreatePlaylist={handleCreatePlaylist}
+                />
+            )}
 
-      {isOwner && editingPlaylist && (
-        <CreatePlaylistModal
-          isOpen={showEditPlaylistModal}
-          onClose={() => setShowEditPlaylistModal(false)}
-          newPlaylist={editingPlaylist}
-          setNewPlaylist={setEditingPlaylist}
-          handleCreatePlaylist={handleUpdatePlaylist}
-          isEditing
-        />
-      )}
+            {isOwner && editingPlaylist && (
+                <CreatePlaylistModal
+                    isOpen={showEditPlaylistModal}
+                    onClose={() => setShowEditPlaylistModal(false)}
+                    newPlaylist={editingPlaylist}
+                    setNewPlaylist={setEditingPlaylist}
+                    handleCreatePlaylist={handleUpdatePlaylist}
+                    isEditing
+                />
+            )}
 
-      {isOwner && (
-        <AddVideoToPlaylistModal
-          isOpen={showAddVideoModal}
-          onClose={() => setShowAddVideoModal(false)}
-          videos={videos}
-          onAddVideo={handleAddVideoToPlaylist}
-        />
-      )}
+            {isOwner && (
+                <AddVideoToPlaylistModal
+                    isOpen={showAddVideoModal}
+                    onClose={() => setShowAddVideoModal(false)}
+                    videos={videos}
+                    onAddVideo={handleAddVideoToPlaylist}
+                />
+            )}
 
-      {isOwner && editingPost && (
-        <EditPostModal
-            isOpen={showEditPostModal}
-            onClose={() => setShowEditPostModal(false)}
-            post={editingPost}
-            setPost={setEditingPost}
-            onSave={handleUpdatePost}
-        />
-      )}
-    </View>
-  );
+            {isOwner && editingPost && (
+                <EditPostModal
+                    isOpen={showEditPostModal}
+                    onClose={() => setShowEditPostModal(false)}
+                    post={editingPost}
+                    setPost={setEditingPost}
+                    onSave={handleUpdatePost}
+                />
+            )}
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({

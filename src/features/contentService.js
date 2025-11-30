@@ -1,6 +1,7 @@
 import axios from 'axios';
+import BASE_API_URL from '../apiConfig';
 
-const API_URL = 'https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api';
+const API_URL = `${BASE_API_URL}/api`;
 
 const fetchContent = async () => {
   const response = await axios.get(`${API_URL}/content`);

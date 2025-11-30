@@ -15,6 +15,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import contentService from '../features/contentService';
 import AddVideoToPlaylistModal from '../components/AddVideoToPlaylistModal';
 import EditPostModal from '../components/EditPostModal';
+import HighlightsSection from '../components/HighlightsSection';
+import CreateHighlightModal from '../components/CreateHighlightModal';
+import VerticalHighlightViewer from '../components/VerticalHighlightViewer';
+import useHighlights from '../features/useHighlights';
+import FeedSection from '../components/FeedSection';
+import CreateFeedPostModal from '../components/CreateFeedPostModal';
+import FeedPostViewerModal from '../components/FeedPostViewerModal';
+import useFeeds from '../features/useFeeds';
 
 export default function CreatorChannel() {
     const navigation = useNavigation();
@@ -71,6 +79,18 @@ export default function CreatorChannel() {
 
     // State for Banner Image
     const [bannerImageFile, setBannerImageFile] = useState(null);
+
+    // State for Highlights
+    const [showCreateHighlightModal, setShowCreateHighlightModal] = useState(false);
+    const [showVerticalHighlightViewer, setShowVerticalHighlightViewer] = useState(false);
+    const [selectedHighlight, setSelectedHighlight] = useState(null);
+    const { highlights, createHighlight } = useHighlights(loggedInUser, creatorId);
+
+    // State for Feeds
+    const [showCreateFeedPostModal, setShowCreateFeedPostModal] = useState(false);
+    const [showFeedPostViewerModal, setShowFeedPostViewerModal] = useState(false);
+    const [selectedFeedPost, setSelectedFeedPost] = useState(null);
+    const { feeds, createFeedPost } = useFeeds(loggedInUser, creatorId);
 
 
     const fetchPlaylists = async () => {
@@ -581,6 +601,12 @@ export default function CreatorChannel() {
                     <Pressable style={styles.actionButton} onPress={() => navigation.navigate('PostVideoForReview')}>
                         <Text style={styles.actionButtonText}>Upload Video</Text>
                     </Pressable>
+                    <Pressable style={styles.actionButton} onPress={() => setShowCreateFeedPostModal(true)}>
+                        <Text style={styles.actionButtonText}>New Feed Post</Text>
+                    </Pressable>
+                    <Pressable style={styles.actionButton} onPress={() => setShowCreateHighlightModal(true)}>
+                        <Text style={styles.actionButtonText}>New Highlight</Text>
+                    </Pressable>
                     <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
                         <Text style={styles.actionButtonText}>Edit Channel</Text>
                     </Pressable>
@@ -588,6 +614,12 @@ export default function CreatorChannel() {
             )}
 
             <View style={styles.navLinks}>
+                <Pressable style={[styles.tab, activeTab === 'FEEDS' && styles.activeTab]} onPress={() => handleTabClick('FEEDS')}>
+                    <Text style={styles.navLink}>FEEDS</Text>
+                </Pressable>
+                <Pressable style={[styles.tab, activeTab === 'HIGHLIGHTS' && styles.activeTab]} onPress={() => handleTabClick('HIGHLIGHTS')}>
+                    <Text style={styles.navLink}>HIGHLIGHTS</Text>
+                </Pressable>
                 <Pressable style={[styles.tab, activeTab === 'VIDEOS' && styles.activeTab]} onPress={() => handleTabClick('VIDEOS')}>
                     <Text style={styles.navLink}>VIDEOS</Text>
                 </Pressable>
@@ -608,6 +640,34 @@ export default function CreatorChannel() {
         const header = renderHeader();
 
         switch (activeTab) {
+            case 'FEEDS':
+                return (
+                    <ScrollView>
+                        {header}
+                        <FeedSection
+                            user={loggedInUser}
+                            creatorId={creatorId}
+                            onPostClick={(post, index) => {
+                                setSelectedFeedPost({ ...post, index });
+                                setShowFeedPostViewerModal(true);
+                            }}
+                        />
+                    </ScrollView>
+                );
+            case 'HIGHLIGHTS':
+                return (
+                    <ScrollView>
+                        {header}
+                        <HighlightsSection
+                            user={loggedInUser}
+                            creatorId={creatorId}
+                            onSelectHighlight={(highlight, index) => {
+                                setSelectedHighlight({ ...highlight, index });
+                                setShowVerticalHighlightViewer(true);
+                            }}
+                        />
+                    </ScrollView>
+                );
             case 'VIDEOS':
                 return (
                     <ScrollView>
@@ -838,6 +898,44 @@ export default function CreatorChannel() {
     return (
       <View style={styles.container}>
         {renderContent()}
+
+        {isOwner && (
+            <CreateFeedPostModal
+                isOpen={showCreateFeedPostModal}
+                onClose={() => setShowCreateFeedPostModal(false)}
+                onCreateFeedPost={createFeedPost}
+            />
+        )}
+
+        {showFeedPostViewerModal && selectedFeedPost && (
+            <FeedPostViewerModal
+                post={selectedFeedPost}
+                onClose={() => {
+                    setShowFeedPostViewerModal(false);
+                    setSelectedFeedPost(null);
+                }}
+            />
+        )}
+
+        {isOwner && (
+            <CreateHighlightModal
+                isOpen={showCreateHighlightModal}
+                onClose={() => setShowCreateHighlightModal(false)}
+                onCreate={createHighlight}
+                availableVideos={videos}
+            />
+        )}
+
+        {showVerticalHighlightViewer && selectedHighlight && (
+            <VerticalHighlightViewer
+                highlights={highlights}
+                startIndex={selectedHighlight.index}
+                onClose={() => {
+                    setShowVerticalHighlightViewer(false);
+                    setSelectedHighlight(null);
+                }}
+            />
+        )}
 
         {isOwner && (
         <EditChannelModal

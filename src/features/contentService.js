@@ -137,6 +137,69 @@ const updateChannelBanner = async (userId, imageFile, token) => {
   return response.data;
 };
 
+// like feed post
+const likeFeedPost = async ({ feedId, token }) => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/feed/${feedId}/like`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      const message =
+        error.response?.data?.message || 'Failed to like feed post. Please try again.';
+      throw new Error(message);
+    }
+  };
+
+  // unlike feed post
+  const unlikeFeedPost = async ({ feedId, token }) => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/feed/${feedId}/unlike`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      const message =
+        error.response?.data?.message || 'Failed to unlike feed post. Please try again.';
+      throw new Error(message);
+    }
+  };
+
+  // comment on feed post
+  const commentOnFeedPost = async ({ feedId, comment, token }) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/feed/${feedId}/comment`,
+        { feedId, text: comment },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      const message =
+        error.response?.data?.message || 'Failed to add comment on feed post. Please try again.';
+      throw new Error(message);
+    }
+  };
+
 export default {
   fetchContent,
   addToFavorites,
@@ -152,4 +215,7 @@ export default {
   deleteCommunityComment,
   updateChannelDetails,
   updateChannelBanner,
+  likeFeedPost,
+  unlikeFeedPost,
+  commentOnFeedPost,
 };

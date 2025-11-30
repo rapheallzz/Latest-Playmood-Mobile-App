@@ -17,6 +17,7 @@ import Teen from '../components/Teen';
 import tw from 'tailwind-react-native-classnames';
 import { useSelector } from 'react-redux';
 import Behind from '../components/Behind';
+import HighlightsHome from '../components/HighlightsHome';
 
 const { width } = Dimensions.get('window');
 const isTV = width >= 1024;
@@ -40,6 +41,7 @@ export default function HomeScreen() {
     <View style={tw`flex-1 bg-black`}>
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={tw`flex-1 ml-10`}>
+        <HighlightsHome />
         <LikeCard data={likecard} />
         <View style={tw`flex mt-10`}> 
           {[Top10Slider, NewOn, Channel, Diaries, Spaces, Recommended, Interview, Fashion, Social, Report, Behind, Teen].map((Component, index) => (

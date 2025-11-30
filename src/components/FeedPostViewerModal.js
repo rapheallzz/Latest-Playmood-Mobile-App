@@ -58,6 +58,12 @@ const FeedPostViewerModal = ({ post, onClose, onNext, onPrev }) => {
         <Pressable style={styles.closeButton} onPress={onClose}>
           <FontAwesome name="times" size={24} color="white" />
         </Pressable>
+        <Pressable style={styles.prevButton} onPress={onPrev}>
+            <FontAwesome name="chevron-left" size={24} color="white" />
+        </Pressable>
+        <Pressable style={styles.nextButton} onPress={onNext}>
+            <FontAwesome name="chevron-right" size={24} color="white" />
+        </Pressable>
         <Swiper loop={false} showsPagination={true}>
           {post.media.map((mediaItem, index) => (
             <Image key={index} source={{ uri: mediaItem.url }} style={styles.media} resizeMode="contain" />
@@ -117,6 +123,18 @@ const styles = StyleSheet.create({
       closeButton: {
         position: 'absolute',
         top: 40,
+        right: 20,
+        zIndex: 1,
+      },
+      prevButton: {
+        position: 'absolute',
+        top: '50%',
+        left: 20,
+        zIndex: 1,
+      },
+      nextButton: {
+        position: 'absolute',
+        top: '50%',
         right: 20,
         zIndex: 1,
       },

@@ -613,12 +613,18 @@ export default function CreatorChannel() {
                 </View>
             )}
 
+            <HighlightsSection
+                user={loggedInUser}
+                creatorId={creatorId}
+                onSelectHighlight={(highlight, index) => {
+                    setSelectedHighlight({ ...highlight, index });
+                    setShowVerticalHighlightViewer(true);
+                }}
+            />
+
             <View style={styles.navLinks}>
                 <Pressable style={[styles.tab, activeTab === 'FEEDS' && styles.activeTab]} onPress={() => handleTabClick('FEEDS')}>
                     <Text style={styles.navLink}>FEEDS</Text>
-                </Pressable>
-                <Pressable style={[styles.tab, activeTab === 'HIGHLIGHTS' && styles.activeTab]} onPress={() => handleTabClick('HIGHLIGHTS')}>
-                    <Text style={styles.navLink}>HIGHLIGHTS</Text>
                 </Pressable>
                 <Pressable style={[styles.tab, activeTab === 'VIDEOS' && styles.activeTab]} onPress={() => handleTabClick('VIDEOS')}>
                     <Text style={styles.navLink}>VIDEOS</Text>
@@ -637,44 +643,23 @@ export default function CreatorChannel() {
     );
 
     const renderContent = () => {
-        const header = renderHeader();
-
         switch (activeTab) {
             case 'FEEDS':
                 return (
-                    <ScrollView>
-                        {header}
-                        <FeedSection
-                            user={loggedInUser}
-                            creatorId={creatorId}
-                            onPostClick={(post, index) => {
-                                setSelectedFeedPost({ ...post, index });
-                                setShowFeedPostViewerModal(true);
-                            }}
-                        />
-                    </ScrollView>
-                );
-            case 'HIGHLIGHTS':
-                return (
-                    <ScrollView>
-                        {header}
-                        <HighlightsSection
-                            user={loggedInUser}
-                            creatorId={creatorId}
-                            onSelectHighlight={(highlight, index) => {
-                                setSelectedHighlight({ ...highlight, index });
-                                setShowVerticalHighlightViewer(true);
-                            }}
-                        />
-                    </ScrollView>
+                    <FeedSection
+                        user={loggedInUser}
+                        creatorId={creatorId}
+                        onPostClick={(post, index) => {
+                            setSelectedFeedPost({ ...post, index });
+                            setShowFeedPostViewerModal(true);
+                        }}
+                    />
                 );
             case 'VIDEOS':
                 return (
-                    <ScrollView>
-                        {header}
-                        <View style={styles.contentSection}>
-                            <Text style={styles.contentTitle}>Videos</Text>
-                            <FlatList
+                    <View style={styles.contentSection}>
+                        <Text style={styles.contentTitle}>Videos</Text>
+                        <FlatList
                                 data={videos}
                                 renderItem={({ item }) => <ContentCard item={item} />}
                                 keyExtractor={(item) => item._id}
@@ -896,7 +881,8 @@ export default function CreatorChannel() {
     }
   
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
+        {renderHeader()}
         {renderContent()}
 
         {isOwner && (

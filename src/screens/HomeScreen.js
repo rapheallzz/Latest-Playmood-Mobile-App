@@ -41,10 +41,9 @@ export default function HomeScreen() {
     <View style={tw`flex-1 bg-black`}>
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={tw`flex-1 ml-10`}>
-        <HighlightsHome />
         <LikeCard data={likecard} />
         <View style={tw`flex mt-10`}> 
-          {[Top10Slider, NewOn, Channel, Diaries, Spaces, Recommended, Interview, Fashion, Social, Report, Behind, Teen].map((Component, index) => (
+          {[Top10Slider, HighlightsHome, NewOn, Channel, Diaries, Spaces, Recommended, Interview, Fashion, Social, Report, Behind, Teen].map((Component, index) => (
             <Pressable 
               key={index} 
               onPress={handleTop10Press} 

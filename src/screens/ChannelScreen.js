@@ -92,6 +92,9 @@ export default function CreatorChannel() {
     const [selectedFeedPost, setSelectedFeedPost] = useState(null);
     const { feeds, createFeedPost, fetchFeeds } = useFeeds(loggedInUser, creatorId);
 
+    // State for "More" menu
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+
 
     const fetchPlaylists = async () => {
         if (!creatorId) {
@@ -591,25 +594,34 @@ export default function CreatorChannel() {
             </View>
 
             {isOwner && (
-                <View style={styles.creatorActions}>
-                    <Pressable style={styles.actionButton} onPress={() => setShowPlaylistModal(true)}>
-                        <Text style={styles.actionButtonText}>New Playlist</Text>
-                    </Pressable>
-                    <Pressable style={styles.actionButton} onPress={() => setShowCommunityModal(true)}>
-                        <Text style={styles.actionButtonText}>New Post</Text>
-                    </Pressable>
-                    <Pressable style={styles.actionButton} onPress={() => navigation.navigate('PostVideoForReview')}>
-                        <Text style={styles.actionButtonText}>Upload Video</Text>
-                    </Pressable>
-                    <Pressable style={styles.actionButton} onPress={() => setShowCreateFeedPostModal(true)}>
-                        <Text style={styles.actionButtonText}>New Feed Post</Text>
-                    </Pressable>
-                    <Pressable style={styles.actionButton} onPress={() => setShowCreateHighlightModal(true)}>
-                        <Text style={styles.actionButtonText}>New Highlight</Text>
-                    </Pressable>
-                    <Pressable style={styles.actionButton} onPress={handleOpenEditModal}>
-                        <Text style={styles.actionButtonText}>Edit Channel</Text>
-                    </Pressable>
+                <View>
+                    <View style={styles.creatorActions}>
+                        <Pressable style={styles.actionButton} onPress={() => navigation.navigate('PostVideoForReview')}>
+                            <Text style={styles.actionButtonText}>Upload Video</Text>
+                        </Pressable>
+                        <Pressable style={styles.actionButton} onPress={() => setShowCommunityModal(true)}>
+                            <Text style={styles.actionButtonText}>New Post</Text>
+                        </Pressable>
+                        <Pressable style={styles.actionButton} onPress={() => setShowMoreMenu(!showMoreMenu)}>
+                            <FontAwesome name="ellipsis-h" size={20} color="white" />
+                        </Pressable>
+                    </View>
+                    {showMoreMenu && (
+                        <View style={styles.moreMenu}>
+                            <Pressable style={styles.menuItem} onPress={() => setShowPlaylistModal(true)}>
+                                <Text style={styles.menuItemText}>New Playlist</Text>
+                            </Pressable>
+                            <Pressable style={styles.menuItem} onPress={() => setShowCreateHighlightModal(true)}>
+                                <Text style={styles.menuItemText}>New Highlight</Text>
+                            </Pressable>
+                            <Pressable style={styles.menuItem} onPress={() => setShowCreateFeedPostModal(true)}>
+                                <Text style={styles.menuItemText}>New Feed Post</Text>
+                            </Pressable>
+                            <Pressable style={styles.menuItem} onPress={handleOpenEditModal}>
+                                <Text style={styles.menuItemText}>Edit Channel</Text>
+                            </Pressable>
+                        </View>
+                    )}
                 </View>
             )}
 
@@ -1022,6 +1034,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingHorizontal: 2,
     paddingBottom: 20,
+  },
+  moreMenu: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 5,
+    padding: 10,
+    position: 'absolute',
+    right: 20,
+    top: 60,
+    zIndex: 1,
+  },
+  menuItem: {
+    paddingVertical: 10,
+  },
+  menuItemText: {
+    color: 'white',
+    fontSize: 16,
   },
   container: {
     flex: 1,

@@ -1,61 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Modal, TextInput, FlatList, Pressable, StyleSheet, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchContentComments, commentOnContent } from '../features/contentSlice';
-import { FontAwesome } from '@expo/vector-icons';
+import { postContentComment } from '../features/contentSlice';
+import profile from '../../assets/icon-profile.png';
 
-const CommentSection = ({ contentId, isVisible, onClose }) => {
+const CommentSection = ({ isVisible, onClose, contentId }) => {
   const dispatch = useDispatch();
-  const { comments, isLoading } = useSelector((state) => state.content);
+  const comments = useSelector((state) => state.content.comments[contentId] || []);
+  const { isLoading, isError, message } = useSelector((state) => state.content);
   const [newComment, setNewComment] = useState('');
-
-  useEffect(() => {
-    if (isVisible) {
-      dispatch(fetchContentComments(contentId));
-    }
-  }, [dispatch, contentId, isVisible]);
 
   const handlePostComment = () => {
     if (newComment.trim()) {
-      dispatch(commentOnContent({ contentId, comment: newComment }));
+      dispatch(postContentComment({ contentId, comment: newComment }));
       setNewComment('');
     }
   };
 
   const renderComment = ({ item }) => (
     <View style={styles.commentContainer}>
-      <Text style={styles.commentAuthor}>{item.author.name}</Text>
-      <Text style={styles.commentText}>{item.text}</Text>
+      <Image source={profile} style={styles.profileIcon} />
+      <View style={styles.commentContent}>
+        <View style={styles.commentHeader}>
+          <Text style={styles.commentUser}>{item.user?.name}</Text>
+          <Text style={styles.timestamp}>{new Date(item.createdAt).toLocaleString()}</Text>
+        </View>
+        <Text style={styles.commentText}>{item.text}</Text>
+      </View>
     </View>
   );
 
   return (
-    <Modal visible={isVisible} transparent={true} animationType="slide">
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Pressable style={styles.closeButton} onPress={onClose}>
-            <FontAwesome name="times" size={24} color="black" />
-          </Pressable>
-          <Text style={styles.title}>Comments</Text>
-          {isLoading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
-          ) : (
-            <FlatList
-              data={comments}
-              renderItem={renderComment}
-              keyExtractor={(item) => item._id}
-              ListEmptyComponent={<Text>No comments yet.</Text>}
-            />
-          )}
+          <FlatList
+            data={comments}
+            renderItem={renderComment}
+            keyExtractor={(item) => item._id}
+            ListEmptyComponent={<Text style={styles.noCommentsText}>No comments yet.</Text>}
+          />
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -63,10 +52,11 @@ const CommentSection = ({ contentId, isVisible, onClose }) => {
               value={newComment}
               onChangeText={setNewComment}
             />
-            <Pressable style={styles.postButton} onPress={handlePostComment}>
+            <Pressable style={styles.postButton} onPress={handlePostComment} disabled={isLoading}>
               <Text style={styles.postButtonText}>Post</Text>
             </Pressable>
           </View>
+          {isError && <Text style={styles.errorText}>{message}</Text>}
         </View>
       </View>
     </Modal>
@@ -84,50 +74,64 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    height: '60%',
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    height: '50%',
   },
   commentContainer: {
-    marginBottom: 15,
+    flexDirection: 'row',
+    marginBottom: 10,
   },
-  commentAuthor: {
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  commentContent: {
+    flex: 1,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  commentUser: {
     fontWeight: 'bold',
+  },
+  timestamp: {
+    color: 'gray',
+    fontSize: 12,
   },
   commentText: {
     marginTop: 5,
   },
+  noCommentsText: {
+    textAlign: 'center',
+    color: 'gray',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 10,
+    marginTop: 10,
   },
   input: {
     flex: 1,
-    height: 40,
-    borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
+    borderColor: 'gray',
+    borderRadius: 5,
+    padding: 10,
   },
   postButton: {
     marginLeft: 10,
     backgroundColor: '#541011',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
+    padding: 10,
+    borderRadius: 5,
   },
   postButtonText: {
     color: 'white',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 

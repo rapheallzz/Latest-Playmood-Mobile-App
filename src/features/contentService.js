@@ -211,6 +211,20 @@ const fetchContentComments = async (contentId) => {
   return response.data;
 };
 
+const postContentComment = async ({ contentId, comment, token }) => {
+  const response = await axios.post(
+    `${API_URL}/content/${contentId}/comment`,
+    { text: comment },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -231,4 +245,5 @@ export default {
   commentOnFeedPost,
   fetchTopTenContent,
   fetchContentComments,
+  postContentComment,
 };

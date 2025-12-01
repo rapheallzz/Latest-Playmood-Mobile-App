@@ -18,57 +18,10 @@ const addToWatchlist = async (contentId) => {
   return response;
 };
 
-const likeContent = async (contentId, token) => {
-  const response = await axios.put(
-    `${API_URL}/content/${contentId}/like`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return response.data;
+const likeContent = async (contentId, userId) => {
+  const response = await axios.post(`${API_URL}/like/`, { contentId, userId });
+  return response;
 };
-
-const unlikeContent = async (contentId, token) => {
-    const response = await axios.put(
-      `${API_URL}/content/${contentId}/unlike`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data;
-};
-
-const fetchContentComments = async (contentId, token) => {
-    const response = await axios.get(
-        `${API_URL}/content/${contentId}/comments`,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }
-    );
-    return response.data;
-};
-
-const commentOnContent = async (contentId, comment, token) => {
-    const response = await axios.post(
-        `${API_URL}/content/${contentId}/comments`,
-        { text: comment },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }
-    );
-    return response.data;
-};
-
 
 const fetchLikedContent = async (token) => {
   const response = await axios.get(`${API_URL}/users/likes`, {
@@ -253,14 +206,16 @@ const fetchTopTenContent = async () => {
   return response.data;
 };
 
+const fetchContentComments = async (contentId) => {
+  const response = await axios.get(`${API_URL}/content/${contentId}/comments`);
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
   addToWatchlist,
   likeContent,
-  unlikeContent,
-  fetchContentComments,
-  commentOnContent,
   fetchLikedContent,
   fetchFriends,
   addVideoToPlaylist,
@@ -275,4 +230,5 @@ export default {
   unlikeFeedPost,
   commentOnFeedPost,
   fetchTopTenContent,
+  fetchContentComments,
 };

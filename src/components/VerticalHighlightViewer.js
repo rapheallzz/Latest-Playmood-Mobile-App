@@ -1,15 +1,41 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
-import { Video } from 'expo-av';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, StyleSheet, Pressable, Image } from 'react-native';
+import { useEventListener } from 'expo';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
 import Swiper from 'react-native-swiper';
 
-const { height: screenHeight } = Dimensions.get('window');
+const HighlightPlayer = ({ highlight, isActive }) => {
+  const player = useVideoPlayer(highlight.content.video, (player) => {
+    if (isActive) {
+      player.play();
+    }
+  });
+
+  useEffect(() => {
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isActive, player]);
+
+  useEventListener(player, 'timeUpdate', ({ currentTime }) => {
+    const startTime = highlight.content.shortPreview?.start || 0;
+    const endTime = highlight.content.shortPreview?.end;
+
+    if (endTime && currentTime >= endTime) {
+      player.seek(startTime);
+    }
+  });
+
+  return <VideoView player={player} style={styles.video} />;
+};
 
 const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isCommentSectionOpen, setCommentSectionOpen] = useState(false);
-  const videoRefs = useRef([]);
+  const [activeIndex, setActiveIndex] = useState(startIndex);
 
   const handleLikeClick = () => {
     setIsLiked(!isLiked);
@@ -19,16 +45,6 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
     setCommentSectionOpen(!isCommentSectionOpen);
   };
 
-  const handlePlaybackStatusUpdate = (status, highlight) => {
-    if (status.isLoaded) {
-      const startTime = highlight.content.shortPreview?.start * 1000 || 0;
-      const endTime = highlight.content.shortPreview?.end * 1000 || status.durationMillis;
-      if (status.positionMillis >= endTime) {
-        videoRefs.current[highlight.index]?.replayAsync({ positionMillis: startTime });
-      }
-    }
-  };
-
   return (
     <Modal visible={true} transparent={false} animationType="slide">
       <Swiper
@@ -36,16 +52,11 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
         showsPagination={false}
         index={startIndex}
         horizontal={false}
+        onIndexChanged={setActiveIndex}
       >
         {highlights.map((highlight, index) => (
           <View key={highlight._id} style={styles.slide}>
-            <Video
-              ref={(ref) => (videoRefs.current[index] = ref)}
-              source={{ uri: highlight.content.video }}
-              style={styles.video}
-              shouldPlay
-              onPlaybackStatusUpdate={(status) => handlePlaybackStatusUpdate(status, { ...highlight, index })}
-            />
+            <HighlightPlayer highlight={highlight} isActive={index === activeIndex} />
             <Pressable style={styles.closeButton} onPress={onClose}>
               <FontAwesome name="times" size={24} color="white" />
             </Pressable>
@@ -83,28 +94,31 @@ const styles = StyleSheet.create({
     slide: {
         flex: 1,
         backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
       },
       video: {
-        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
       },
       closeButton: {
         position: 'absolute',
-        top: 40,
+        top: 60,
         right: 20,
         zIndex: 1,
       },
       overlay: {
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 20,
+        bottom: 20,
+        left: 20,
+        right: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
       },
       bottomInfo: {
         flex: 1,
+        justifyContent: 'flex-end',
       },
       creatorInfo: {
         flexDirection: 'row',

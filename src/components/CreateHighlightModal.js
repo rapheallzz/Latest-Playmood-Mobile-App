@@ -1,7 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, TextInput, ScrollView, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
+
+const VideoPlayer = ({ video }) => {
+  const player = useVideoPlayer(video.uri, (player) => {
+    player.play();
+  });
+
+  return <VideoView style={styles.videoPlayer} player={player} allowsFullscreen nativeControls />;
+};
 
 const CreateHighlightModal = ({ isOpen, onClose, onCreate, availableVideos }) => {
   const [contentId, setContentId] = useState('');
@@ -70,11 +78,7 @@ const CreateHighlightModal = ({ isOpen, onClose, onCreate, availableVideos }) =>
             />
 
             {selectedVideo && (
-              <Video
-                source={{ uri: selectedVideo.video }}
-                style={styles.videoPlayer}
-                useNativeControls
-              />
+              <VideoPlayer video={{ uri: selectedVideo.video }} />
             )}
 
             <View style={styles.timeContainer}>

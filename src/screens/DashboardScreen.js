@@ -37,7 +37,10 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     dispatch(logout()).then(() => {
-      navigation.navigate('Login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
       console.log('logout success');
     });
   };

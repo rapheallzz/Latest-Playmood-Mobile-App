@@ -33,7 +33,10 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!user.id) {
-      navigation.navigate('Login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
     }
   }, [user.id, navigation]);
 

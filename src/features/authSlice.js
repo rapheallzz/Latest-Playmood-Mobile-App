@@ -51,16 +51,14 @@ export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
 export const checkUserLoggedIn = createAsyncThunk('auth/checkUserLoggedIn', async (_, thunkAPI) => {
   try {
     const userToken = await AsyncStorage.getItem('userToken');
-    if (userToken) {
-      const user = await authService.getUser(userToken);
+    const user = JSON.parse(await AsyncStorage.getItem('user'));
+    if (userToken && user) {
       thunkAPI.dispatch(setUser(user));
       return { user, token: userToken };
     }
     return null;
   } catch (error) {
-    await authService.logout();
-    thunkAPI.dispatch(clearUser());
-    await AsyncStorage.removeItem('userToken');
+    // handle error if any
     return thunkAPI.rejectWithValue('Failed to fetch user data');
   }
 });

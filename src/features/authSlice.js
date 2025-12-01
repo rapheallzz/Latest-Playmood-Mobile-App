@@ -19,7 +19,10 @@ export const register = createAsyncThunk('auth/register', async (user, thunkAPI)
     await AsyncStorage.setItem('userToken', response.token);
     return response;
   } catch (error) {
-    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    const message =
+      (error.response && error.response.data && error.response.data.message) ||
+      error.message ||
+      error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -31,7 +34,11 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
     await AsyncStorage.setItem('userToken', response.token);
     return response;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.message || 'Login failed');
+    const message =
+      (error.response && error.response.data && error.response.data.message) ||
+      error.message ||
+      error.toString();
+    return thunkAPI.rejectWithValue(message);
   }
 });
 
@@ -44,16 +51,14 @@ export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
 export const checkUserLoggedIn = createAsyncThunk('auth/checkUserLoggedIn', async (_, thunkAPI) => {
   try {
     const userToken = await AsyncStorage.getItem('userToken');
-    if (userToken) {
-      const user = await authService.getUser(userToken);
+    const user = JSON.parse(await AsyncStorage.getItem('user'));
+    if (userToken && user) {
       thunkAPI.dispatch(setUser(user));
       return { user, token: userToken };
     }
     return null;
   } catch (error) {
-    await authService.logout();
-    thunkAPI.dispatch(clearUser());
-    await AsyncStorage.removeItem('userToken');
+    // handle error if any
     return thunkAPI.rejectWithValue('Failed to fetch user data');
   }
 });

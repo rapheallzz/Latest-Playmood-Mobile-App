@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, Pressable, Image } from 'react-native';
-import { useEventListener } from 'expo';
+import { View, Text, Modal, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
 import Swiper from 'react-native-swiper';
@@ -20,16 +19,36 @@ const HighlightPlayer = ({ highlight, isActive }) => {
     }
   }, [isActive, player]);
 
-  useEventListener(player, 'timeUpdate', ({ currentTime }) => {
-    const startTime = highlight.content.shortPreview?.start || 0;
-    const endTime = highlight.content.shortPreview?.end;
+  const [status, setStatus] = useState('idle');
 
-    if (endTime && currentTime >= endTime) {
-      player.seek(startTime);
-    }
-  });
+  useEffect(() => {
+    const statusSubscription = player.addListener('statusChange', ({ status }) => {
+      setStatus(status);
+    });
 
-  return <VideoView player={player} style={styles.video} />;
+    const timeSubscription = player.addListener('timeUpdate', ({ currentTime }) => {
+      const startTime = highlight.content.shortPreview?.start || 0;
+      const endTime = highlight.content.shortPreview?.end;
+
+      if (endTime && currentTime >= endTime) {
+        player.seek(startTime);
+      }
+    });
+
+    return () => {
+      statusSubscription.remove();
+      timeSubscription.remove();
+    };
+  }, [player, highlight]);
+
+  return (
+    <>
+      {status === 'loading' && (
+        <ActivityIndicator style={styles.loadingIndicator} size="large" color="#ffffff" />
+      )}
+      <VideoView player={player} style={styles.video} />
+    </>
+  );
 };
 
 const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
@@ -151,6 +170,10 @@ const styles = StyleSheet.create({
       actionText: {
         color: 'white',
         marginTop: 5,
+      },
+      loadingIndicator: {
+        position: 'absolute',
+        zIndex: 1,
       },
 });
 

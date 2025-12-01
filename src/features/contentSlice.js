@@ -57,10 +57,45 @@ export const fetchFriends = createAsyncThunk('content/fetchFriends', async (_, t
   }
 });
 
+export const fetchTopTenContent = createAsyncThunk('content/fetchTopTenContent', async (_, thunkAPI) => {
+  try {
+    const response = await contentService.fetchTopTenContent();
+    return response;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response.data);
+  }
+});
+
+export const fetchContentComments = createAsyncThunk('content/fetchContentComments', async (contentId, thunkAPI) => {
+  try {
+    const response = await contentService.fetchContentComments(contentId);
+    return { contentId, comments: response };
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response.data);
+  }
+});
+
+export const postContentComment = createAsyncThunk('content/postContentComment', async ({ contentId, comment }, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.postContentComment({ contentId, comment, token });
+    return response;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response.data);
+  }
+});
+
 const contentSlice = createSlice({
   name: 'content',
+  reducers: {
+    clearComments: (state, action) => {
+      delete state.comments[action.payload];
+    },
+  },
   initialState: {
     contentList: [],
+    topTenContent: [],
+    comments: {},
     favorites: [],
     watchlist: [],
     likes: [],
@@ -79,6 +114,46 @@ const contentSlice = createSlice({
         state.contentList = action.payload;
       })
       .addCase(fetchContent.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchContentComments.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchContentComments.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.comments[action.payload.contentId] = action.payload.comments;
+      })
+      .addCase(fetchContentComments.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(postContentComment.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(postContentComment.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { contentId } = action.meta.arg;
+        if (!state.comments[contentId]) {
+          state.comments[contentId] = [];
+        }
+        state.comments[contentId].push(action.payload);
+      })
+      .addCase(postContentComment.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchTopTenContent.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchTopTenContent.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.topTenContent = action.payload;
+      })
+      .addCase(fetchTopTenContent.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
@@ -146,4 +221,5 @@ const contentSlice = createSlice({
   },
 });
 
+export const { clearComments } = contentSlice.actions;
 export default contentSlice.reducer;

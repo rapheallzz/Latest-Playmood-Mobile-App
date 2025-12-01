@@ -1,32 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator, ScrollView } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTopTenContent } from '../features/contentSlice';
 import ContentCard from './ContentCard';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const Top10Slider = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { topTenContent, isLoading, isError, message } = useSelector((state) => state.content);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    dispatch(fetchTopTenContent());
+  }, [dispatch]);
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch('https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content/');
-      const jsonData = await response.json();
-      const top10Data = jsonData.filter(item => item.category === 'Top 10').slice(0, 10);
-      setData(top10Data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return <ActivityIndicator size="large" color="#fff" />;
+  }
+
+  if (isError) {
+    return <Text style={{ color: 'white' }}>{message}</Text>;
   }
 
   return (
@@ -37,8 +30,8 @@ const Top10Slider = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContainer}
       >
-        {data.map((item, index) => (
-          <View key={index} style={styles.itemContainer}>
+        {topTenContent.map((item, index) => (
+          <View key={item._id} style={styles.itemContainer}>
             <View style={styles.numberingContainer}>
               <Text style={styles.numberingText}>{index + 1}</Text>
             </View>

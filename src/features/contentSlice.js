@@ -57,6 +57,36 @@ export const fetchFriends = createAsyncThunk('content/fetchFriends', async (_, t
   }
 });
 
+export const unlikeContent = createAsyncThunk('content/unlikeContent', async (contentId, thunkAPI) => {
+    try {
+        const token = thunkAPI.getState().auth.userToken;
+        const response = await contentService.unlikeContent(contentId, token);
+        return response.data;
+    } catch (error) {
+        return thunkAPI.rejectWithValue(error.response.data);
+    }
+});
+
+export const fetchContentComments = createAsyncThunk('content/fetchContentComments', async (contentId, thunkAPI) => {
+    try {
+        const token = thunkAPI.getState().auth.userToken;
+        const response = await contentService.fetchContentComments(contentId, token);
+        return response.data;
+    } catch (error) {
+        return thunkAPI.rejectWithValue(error.response.data);
+    }
+});
+
+export const commentOnContent = createAsyncThunk('content/commentOnContent', async ({ contentId, comment }, thunkAPI) => {
+    try {
+        const token = thunkAPI.getState().auth.userToken;
+        const response = await contentService.commentOnContent(contentId, comment, token);
+        return response.data;
+    } catch (error) {
+        return thunkAPI.rejectWithValue(error.response.data);
+    }
+});
+
 const contentSlice = createSlice({
   name: 'content',
   initialState: {
@@ -64,6 +94,7 @@ const contentSlice = createSlice({
     favorites: [],
     watchlist: [],
     likes: [],
+    comments: [],
     friends: [],
     isLoading: false,
     isError: false,
@@ -139,6 +170,42 @@ const contentSlice = createSlice({
         state.friends = action.payload;
       })
       .addCase(fetchFriends.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(unlikeContent.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(unlikeContent.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.likes = state.likes.filter((id) => id !== action.payload.contentId);
+      })
+      .addCase(unlikeContent.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchContentComments.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchContentComments.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.comments = action.payload;
+      })
+      .addCase(fetchContentComments.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(commentOnContent.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(commentOnContent.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.comments.push(action.payload);
+      })
+      .addCase(commentOnContent.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;

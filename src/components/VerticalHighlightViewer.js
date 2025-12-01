@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { likeContent, unlikeContent } from '../features/contentSlice';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
 import Swiper from 'react-native-swiper';
+import CommentSection from './CommentSection';
 
 const HighlightPlayer = ({ highlight, isActive }) => {
   const player = useVideoPlayer(highlight.content.video, (player) => {
@@ -52,16 +55,31 @@ const HighlightPlayer = ({ highlight, isActive }) => {
 };
 
 const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
-  const [isLiked, setIsLiked] = useState(false);
+  const dispatch = useDispatch();
+  const { likes } = useSelector((state) => state.content);
+  const [isLiked, setIsLiked] = useState([]);
   const [isCommentSectionOpen, setCommentSectionOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(startIndex);
+  const [activeHighlight, setActiveHighlight] = useState(highlights[startIndex]);
 
-  const handleLikeClick = () => {
-    setIsLiked(!isLiked);
+  useEffect(() => {
+    setActiveHighlight(highlights[activeIndex]);
+  }, [activeIndex, highlights]);
+
+  useEffect(() => {
+    setIsLiked(likes.map((like) => like.contentId));
+  }, [likes]);
+
+  const handleLikeClick = (contentId) => {
+    if (isLiked.includes(contentId)) {
+      dispatch(unlikeContent(contentId));
+    } else {
+      dispatch(likeContent(contentId));
+    }
   };
 
   const handleCommentIconClick = () => {
-    setCommentSectionOpen(!isCommentSectionOpen);
+    setCommentSectionOpen(true);
   };
 
   return (
@@ -88,8 +106,8 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
                 <Text style={styles.title}>{highlight.content.title}</Text>
               </View>
               <View style={styles.actions}>
-                <Pressable style={styles.actionButton} onPress={handleLikeClick}>
-                  <FontAwesome name="heart" size={24} color={isLiked ? 'red' : 'white'} />
+                <Pressable style={styles.actionButton} onPress={() => handleLikeClick(highlight._id)}>
+                  <FontAwesome name="heart" size={24} color={isLiked.includes(highlight._id) ? 'red' : 'white'} />
                   <Text style={styles.actionText}>{highlight.content.likesCount || 0}</Text>
                 </Pressable>
                 <Pressable style={styles.actionButton} onPress={handleCommentIconClick}>
@@ -105,6 +123,13 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
           </View>
         ))}
       </Swiper>
+      {isCommentSectionOpen && (
+        <CommentSection
+          contentId={activeHighlight._id}
+          isVisible={isCommentSectionOpen}
+          onClose={() => setCommentSectionOpen(false)}
+        />
+      )}
     </Modal>
   );
 };

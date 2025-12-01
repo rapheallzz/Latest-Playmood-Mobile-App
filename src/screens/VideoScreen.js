@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Image, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import CommentSection from '../components/CommentSection';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import Recommended from '../components/Recommended';
 import Watching from '../components/Watching';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay, faComment } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { likeContent, addToFavorites } from '../features/contentSlice';
+import { likeContent, unlikeContent, addToFavorites } from '../features/contentSlice';
 
 const VideoScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -27,15 +28,23 @@ const VideoScreen = ({ route }) => {
     navigation.navigate('NextVideoPage');
   };
 
+  const { likes } = useSelector((state) => state.content);
+  const [isLiked, setIsLiked] = useState([]);
+  const [isCommentSectionOpen, setCommentSectionOpen] = useState(false);
+
+  useEffect(() => {
+    setIsLiked(likes.map((like) => like.contentId));
+  }, [likes]);
+
   const handleTop10Press = () => {
     navigation.navigate('ContentDetails');
   };
 
-  const handleLikePress = () => {
-    if (userId) {
-      dispatch(likeContent({ contentId: _id, userId }));
+  const handleLikePress = (contentId) => {
+    if (isLiked.includes(contentId)) {
+      dispatch(unlikeContent(contentId));
     } else {
-      console.log('User not logged in');
+      dispatch(likeContent(contentId));
     }
   };
 
@@ -45,6 +54,10 @@ const VideoScreen = ({ route }) => {
     } else {
       console.log('User not logged in');
     }
+  };
+
+  const handleCommentIconClick = () => {
+    setCommentSectionOpen(true);
   };
 
   return (
@@ -79,10 +92,14 @@ const VideoScreen = ({ route }) => {
                   <FontAwesomeIcon icon={faEye} style={styles.icon} />
                   <Text style={styles.infobuttonText}>0</Text>
                 </View>
-                <View style={styles.flexIt}>
-                  <FontAwesomeIcon icon={faHeart} style={styles.icon} />
+                <Pressable style={styles.flexIt} onPress={() => handleLikePress(_id)}>
+                  <FontAwesomeIcon icon={faHeart} style={{color: isLiked.includes(_id) ? 'red' : 'white'}} />
                   <Text style={styles.infobuttonText}>0</Text>
-                </View>
+                </Pressable>
+                <Pressable style={styles.flexIt} onPress={handleCommentIconClick}>
+                  <FontAwesomeIcon icon={faComment} style={styles.icon} />
+                  <Text style={styles.infobuttonText}>0</Text>
+                </Pressable>
                 <View>
                   <FontAwesomeIcon icon={faLink} style={styles.icon} />
                 </View>
@@ -132,6 +149,13 @@ const VideoScreen = ({ route }) => {
           <Watching />
         </Pressable>
       </ScrollView>
+      {isCommentSectionOpen && (
+        <CommentSection
+          contentId={_id}
+          isVisible={isCommentSectionOpen}
+          onClose={() => setCommentSectionOpen(false)}
+        />
+      )}
     </View>
   );
 };

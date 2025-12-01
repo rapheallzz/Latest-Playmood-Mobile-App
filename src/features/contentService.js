@@ -58,7 +58,7 @@ const fetchContentComments = async (contentId, token) => {
 
 const commentOnContent = async (contentId, comment, token) => {
     const response = await axios.post(
-        `${API_URL}/content/${contentId}/comment`,
+        `${API_URL}/content/${contentId}/comments`,
         { text: comment },
         {
             headers: {

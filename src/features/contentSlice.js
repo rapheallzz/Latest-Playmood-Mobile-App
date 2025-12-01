@@ -144,6 +144,11 @@ const contentSlice = createSlice({
       .addCase(likeContent.fulfilled, (state, action) => {
         state.isLoading = false;
         state.likes.push(action.payload);
+        const index = state.contentList.findIndex((content) => content._id === action.payload.contentId);
+        if (index !== -1) {
+          state.contentList[index].likesCount++;
+          state.contentList[index].isLiked = true;
+        }
       })
       .addCase(likeContent.rejected, (state, action) => {
         state.isLoading = false;
@@ -180,6 +185,11 @@ const contentSlice = createSlice({
       .addCase(unlikeContent.fulfilled, (state, action) => {
         state.isLoading = false;
         state.likes = state.likes.filter((id) => id !== action.payload.contentId);
+        const index = state.contentList.findIndex((content) => content._id === action.payload.contentId);
+        if (index !== -1) {
+          state.contentList[index].likesCount--;
+          state.contentList[index].isLiked = false;
+        }
       })
       .addCase(unlikeContent.rejected, (state, action) => {
         state.isLoading = false;

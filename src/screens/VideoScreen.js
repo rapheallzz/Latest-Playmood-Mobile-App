@@ -93,8 +93,8 @@ const VideoScreen = ({ route }) => {
                   <Text style={styles.infobuttonText}>0</Text>
                 </View>
                 <Pressable style={styles.flexIt} onPress={() => handleLikePress(_id)}>
-                  <FontAwesomeIcon icon={faHeart} style={{color: isLiked.includes(_id) ? 'red' : 'white'}} />
-                  <Text style={styles.infobuttonText}>0</Text>
+                  <FontAwesomeIcon icon={faHeart} style={{color: (route.params.isLiked || isLiked.includes(_id)) ? 'red' : 'white'}} />
+                  <Text style={styles.infobuttonText}>{route.params.likesCount || 0}</Text>
                 </Pressable>
                 <Pressable style={styles.flexIt} onPress={handleCommentIconClick}>
                   <FontAwesomeIcon icon={faComment} style={styles.icon} />

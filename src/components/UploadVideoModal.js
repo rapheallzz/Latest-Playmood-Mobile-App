@@ -1,10 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
+
+const VideoPlayer = ({ videoAsset }) => {
+  const player = useVideoPlayer(videoAsset.uri, (player) => {
+    player.play();
+  });
+
+  return <VideoView style={styles.video} player={player} allowsFullscreen nativeControls />;
+};
 
 export default function UploadVideoModal({ isOpen, onClose, handleUpload }) {
-  const videoRef = useRef(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [credit, setCredit] = useState('');
@@ -74,13 +81,7 @@ export default function UploadVideoModal({ isOpen, onClose, handleUpload }) {
 
             {videoAsset && (
               <View style={styles.videoContainer}>
-                <Video
-                  ref={videoRef}
-                  style={styles.video}
-                  source={{ uri: videoAsset.uri }}
-                  useNativeControls
-                  resizeMode="contain"
-                />
+                <VideoPlayer videoAsset={videoAsset} />
                 <Text style={styles.label}>Preview (10-15 seconds)</Text>
                 <View style={styles.previewControls}>
                     <TextInput style={styles.previewInput} value={previewStart} onChangeText={setPreviewStart} keyboardType="numeric" placeholder="Start"/>

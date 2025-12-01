@@ -1,16 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import MobileHeader from '../components/MobileHeader'; // Assuming a consistent header
+import MobileHeader from '../components/MobileHeader';
+
+const VideoPlayer = ({ videoAsset }) => {
+  const player = useVideoPlayer(videoAsset.uri, (player) => {
+    player.play();
+  });
+
+  return <VideoView style={styles.video} player={player} allowsFullscreen nativeControls />;
+};
 
 export default function UploadScreen() {
   const navigation = useNavigation();
   const { user: loggedInUser } = useSelector((state) => state.auth);
-  const videoRef = useRef(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -134,13 +141,7 @@ export default function UploadScreen() {
 
             {videoAsset && (
               <View style={styles.videoContainer}>
-                <Video
-                  ref={videoRef}
-                  style={styles.video}
-                  source={{ uri: videoAsset.uri }}
-                  useNativeControls
-                  resizeMode="contain"
-                />
+                <VideoPlayer videoAsset={videoAsset} />
                 <Text style={styles.label}>Preview (10-15 seconds)</Text>
                 <View style={styles.previewControls}>
                     <TextInput style={styles.previewInput} value={previewStart} onChangeText={setPreviewStart} keyboardType="numeric" placeholder="Start"/>

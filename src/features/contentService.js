@@ -248,6 +248,11 @@ const likeFeedPost = async ({ feedId, token }) => {
     }
   };
 
+const fetchTopTenContent = async () => {
+  const response = await axios.get(`${API_URL}/content/top-ten`);
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -269,4 +274,5 @@ export default {
   likeFeedPost,
   unlikeFeedPost,
   commentOnFeedPost,
+  fetchTopTenContent,
 };

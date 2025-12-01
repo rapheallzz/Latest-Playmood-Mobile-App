@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Image } from 'react-native';
-import { VideoView, useVideoPlayer, useEventListener } from 'expo-video';
+import { useEventListener } from 'expo';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
 import Swiper from 'react-native-swiper';
 

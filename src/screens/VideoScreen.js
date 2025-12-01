@@ -7,15 +7,16 @@ import Watching from '../components/Watching';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay, faComment } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { likeContent, addToFavorites } from '../features/contentSlice';
+import { likeContent, addToFavorites, fetchContentComments } from '../features/contentSlice';
 
 const VideoScreen = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { title, credits, desc, movie, _id } = route.params;
   const user = useSelector((state) => state.user);
+  const { comments } = useSelector((state) => state.content);
   const userId = user ? user._id : null;
 
   const player = useVideoPlayer(movie, (player) => {
@@ -45,6 +46,10 @@ const VideoScreen = ({ route }) => {
     } else {
       console.log('User not logged in');
     }
+  };
+
+  const handleCommentPress = () => {
+    dispatch(fetchContentComments(_id));
   };
 
   return (
@@ -83,6 +88,10 @@ const VideoScreen = ({ route }) => {
                   <FontAwesomeIcon icon={faHeart} style={styles.icon} />
                   <Text style={styles.infobuttonText}>0</Text>
                 </View>
+                <Pressable style={styles.flexIt} onPress={handleCommentPress}>
+                  <FontAwesomeIcon icon={faComment} style={styles.icon} />
+                  <Text style={styles.infobuttonText}>{comments.length}</Text>
+                </Pressable>
                 <View>
                   <FontAwesomeIcon icon={faLink} style={styles.icon} />
                 </View>

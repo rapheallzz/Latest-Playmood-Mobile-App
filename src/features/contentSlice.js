@@ -57,10 +57,20 @@ export const fetchFriends = createAsyncThunk('content/fetchFriends', async (_, t
   }
 });
 
+export const fetchTopTenContent = createAsyncThunk('content/fetchTopTenContent', async (_, thunkAPI) => {
+  try {
+    const response = await contentService.fetchTopTenContent();
+    return response;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response.data);
+  }
+});
+
 const contentSlice = createSlice({
   name: 'content',
   initialState: {
     contentList: [],
+    topTenContent: [],
     favorites: [],
     watchlist: [],
     likes: [],
@@ -79,6 +89,18 @@ const contentSlice = createSlice({
         state.contentList = action.payload;
       })
       .addCase(fetchContent.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(fetchTopTenContent.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchTopTenContent.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.topTenContent = action.payload;
+      })
+      .addCase(fetchTopTenContent.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;

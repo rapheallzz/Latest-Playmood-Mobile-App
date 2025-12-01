@@ -1,15 +1,29 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
-import { Video } from 'expo-av';
+import React, { useState } from 'react';
+import { View, Text, Modal, StyleSheet, Pressable, Image } from 'react-native';
+import { VideoView, useVideoPlayer, useEventListener } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
 import Swiper from 'react-native-swiper';
 
-const { height: screenHeight } = Dimensions.get('window');
+const HighlightPlayer = ({ highlight }) => {
+  const player = useVideoPlayer(highlight.content.video, (player) => {
+    player.play();
+  });
+
+  useEventListener(player, 'timeUpdate', ({ currentTime }) => {
+    const startTime = highlight.content.shortPreview?.start || 0;
+    const endTime = highlight.content.shortPreview?.end;
+
+    if (endTime && currentTime >= endTime) {
+      player.seek(startTime);
+    }
+  });
+
+  return <VideoView player={player} style={styles.video} />;
+};
 
 const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isCommentSectionOpen, setCommentSectionOpen] = useState(false);
-  const videoRefs = useRef([]);
 
   const handleLikeClick = () => {
     setIsLiked(!isLiked);
@@ -17,16 +31,6 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
 
   const handleCommentIconClick = () => {
     setCommentSectionOpen(!isCommentSectionOpen);
-  };
-
-  const handlePlaybackStatusUpdate = (status, highlight) => {
-    if (status.isLoaded) {
-      const startTime = highlight.content.shortPreview?.start * 1000 || 0;
-      const endTime = highlight.content.shortPreview?.end * 1000 || status.durationMillis;
-      if (status.positionMillis >= endTime) {
-        videoRefs.current[highlight.index]?.replayAsync({ positionMillis: startTime });
-      }
-    }
   };
 
   return (
@@ -37,15 +41,9 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
         index={startIndex}
         horizontal={false}
       >
-        {highlights.map((highlight, index) => (
+        {highlights.map((highlight) => (
           <View key={highlight._id} style={styles.slide}>
-            <Video
-              ref={(ref) => (videoRefs.current[index] = ref)}
-              source={{ uri: highlight.content.video }}
-              style={styles.video}
-              shouldPlay
-              onPlaybackStatusUpdate={(status) => handlePlaybackStatusUpdate(status, { ...highlight, index })}
-            />
+            <HighlightPlayer highlight={highlight} />
             <Pressable style={styles.closeButton} onPress={onClose}>
               <FontAwesome name="times" size={24} color="white" />
             </Pressable>
@@ -83,28 +81,31 @@ const styles = StyleSheet.create({
     slide: {
         flex: 1,
         backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
       },
       video: {
-        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
       },
       closeButton: {
         position: 'absolute',
-        top: 40,
+        top: 60,
         right: 20,
         zIndex: 1,
       },
       overlay: {
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 20,
+        bottom: 20,
+        left: 20,
+        right: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
       },
       bottomInfo: {
         flex: 1,
+        justifyContent: 'flex-end',
       },
       creatorInfo: {
         flexDirection: 'row',

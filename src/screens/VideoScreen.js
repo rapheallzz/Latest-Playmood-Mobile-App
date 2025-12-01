@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Image, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import Recommended from '../components/Recommended';
 import Watching from '../components/Watching';
+import CommentSection from '../components/CommentSection';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay, faComment } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { likeContent, addToFavorites } from '../features/contentSlice';
+import { likeContent, addToFavorites, fetchContentComments, clearComments } from '../features/contentSlice';
 
 const VideoScreen = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { title, credits, desc, movie, _id } = route.params;
   const user = useSelector((state) => state.user);
+  const comments = useSelector((state) => state.content.comments[_id] || []);
   const userId = user ? user._id : null;
+  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearComments(_id));
+    };
+  }, [_id, dispatch]);
 
   const player = useVideoPlayer(movie, (player) => {
     player.loop = true;
@@ -47,8 +56,18 @@ const VideoScreen = ({ route }) => {
     }
   };
 
+  const handleCommentPress = () => {
+    dispatch(fetchContentComments(_id));
+    setIsCommentSectionVisible(true);
+  };
+
   return (
     <View style={styles.container}>
+      <CommentSection
+        isVisible={isCommentSectionVisible}
+        onClose={() => setIsCommentSectionVisible(false)}
+        contentId={_id}
+      />
       <View style={styles.videoHeader}>
         <View style={styles.titleHolder}>
           <Text style={styles.redTitle}> {title} </Text>
@@ -83,6 +102,10 @@ const VideoScreen = ({ route }) => {
                   <FontAwesomeIcon icon={faHeart} style={styles.icon} />
                   <Text style={styles.infobuttonText}>0</Text>
                 </View>
+                <Pressable style={styles.flexIt} onPress={handleCommentPress}>
+                  <FontAwesomeIcon icon={faComment} style={styles.icon} />
+                  <Text style={styles.infobuttonText}>{comments.length}</Text>
+                </Pressable>
                 <View>
                   <FontAwesomeIcon icon={faLink} style={styles.icon} />
                 </View>

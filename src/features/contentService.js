@@ -201,6 +201,30 @@ const likeFeedPost = async ({ feedId, token }) => {
     }
   };
 
+const fetchTopTenContent = async () => {
+  const response = await axios.get(`${API_URL}/content/top-ten`);
+  return response.data;
+};
+
+const fetchContentComments = async (contentId) => {
+  const response = await axios.get(`${API_URL}/content/${contentId}/comments`);
+  return response.data;
+};
+
+const postContentComment = async ({ contentId, comment, token }) => {
+  const response = await axios.post(
+    `${API_URL}/content/${contentId}/comment`,
+    { text: comment },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -219,4 +243,7 @@ export default {
   likeFeedPost,
   unlikeFeedPost,
   commentOnFeedPost,
+  fetchTopTenContent,
+  fetchContentComments,
+  postContentComment,
 };

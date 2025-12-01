@@ -9,15 +9,41 @@ export default function RegistrationScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { isLoading, isError, isSuccess, message } = useSelector(state => state.auth);
 
+  const validateEmail = (email) => {
+    const re = /\S+@\S+\.\S+/;
+    if (!re.test(email)) {
+      setEmailError('Invalid email address');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+    } else {
+      setPasswordError('');
+    }
+  };
+
   const handleRegister = async () => {
+    validateEmail(email);
+    validatePassword(password);
+
+    if (emailError || passwordError) {
+      return;
+    }
+
     dispatch(registerStart());
     try {
-      await dispatch(register(name, email, password)); // Updated to pass name, email, and password
-      navigation.navigate('Home');
+      await dispatch(register({ name, email, password })).unwrap();
+      navigation.navigate('Onboarding');
     } catch (error) {
       console.log('Registration error:', error);
     }
@@ -37,17 +63,25 @@ export default function RegistrationScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            onChangeText={text => setEmail(text)}
+            onChangeText={text => {
+              setEmail(text);
+              validateEmail(text);
+            }}
             value={email}
             keyboardType="email-address"
           />
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           <TextInput
             style={styles.input}
             placeholder="Password"
-            onChangeText={text => setPassword(text)}
+            onChangeText={text => {
+              setPassword(text);
+              validatePassword(text);
+            }}
             value={password}
             secureTextEntry
           />
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           <Pressable style={styles.registerButton} onPress={handleRegister} disabled={isLoading}>
             <Text style={styles.registerButtonText}>{isLoading ? 'Registering...' : 'Register'}</Text>
           </Pressable>

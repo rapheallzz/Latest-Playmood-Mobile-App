@@ -29,12 +29,12 @@ export default function UploadVideoModal({ isOpen, onClose, handleUpload }) {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaType.All,
       allowsMultipleSelection: true,
       quality: 1,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets) {
       const selectedAssets = result.assets || [];
       setFiles(selectedAssets);
       const video = selectedAssets.find(asset => asset.type === 'video');

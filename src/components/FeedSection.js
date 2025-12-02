@@ -23,21 +23,33 @@ const FeedSection = ({ user, creatorId, onPostClick }) => {
       data={feeds}
       keyExtractor={(item) => item._id}
       numColumns={3}
-      renderItem={({ item, index }) => (
-        <Pressable style={styles.feedItem} onPress={() => onPostClick(item, index)}>
-          <Image source={{ uri: item.media[0].url }} style={styles.feedImage} />
-          <View style={styles.overlay}>
-            <View style={styles.iconContainer}>
-              <FontAwesome name="heart" size={16} color="white" />
-              <Text style={styles.iconText}>{item.likes.length}</Text>
+      renderItem={({ item, index }) => {
+        // Defensive check for media
+        if (!item.media || item.media.length === 0) {
+          return (
+            <View style={styles.feedItem}>
+              <View style={styles.noMediaContainer}>
+                <Text style={styles.noMediaText}>No Media</Text>
+              </View>
             </View>
-            <View style={styles.iconContainer}>
-              <FontAwesome name="comment" size={16} color="white" />
-              <Text style={styles.iconText}>{item.comments.length}</Text>
+          );
+        }
+        return (
+          <Pressable style={styles.feedItem} onPress={() => onPostClick(item, index)}>
+            <Image source={{ uri: item.media[0].url }} style={styles.feedImage} />
+            <View style={styles.overlay}>
+              <View style={styles.iconContainer}>
+                <FontAwesome name="heart" size={16} color="white" />
+                <Text style={styles.iconText}>{item.likes.length}</Text>
+              </View>
+              <View style={styles.iconContainer}>
+                <FontAwesome name="comment" size={16} color="white" />
+                <Text style={styles.iconText}>{item.comments.length}</Text>
+              </View>
             </View>
-          </View>
-        </Pressable>
-      )}
+          </Pressable>
+        );
+      }}
     />
   );
 };
@@ -80,6 +92,16 @@ const styles = StyleSheet.create({
     iconText: {
         color: 'white',
         marginLeft: 5,
+    },
+    noMediaContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#333',
+    },
+    noMediaText: {
+        color: '#888',
+        fontSize: 12,
     },
 });
 

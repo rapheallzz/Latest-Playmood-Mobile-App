@@ -8,15 +8,21 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaType.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-      multiple: true,
+      allowsMultipleSelection: true,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets) {
       setMedia(result.assets);
     }
   };

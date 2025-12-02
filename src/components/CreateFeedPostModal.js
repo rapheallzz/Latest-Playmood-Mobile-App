@@ -15,7 +15,7 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.All,
+      mediaTypes: [ImagePicker.MediaType.Images, ImagePicker.MediaType.Videos],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,

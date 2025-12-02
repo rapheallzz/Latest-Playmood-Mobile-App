@@ -9,14 +9,14 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
 
   const handleFileChange = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaType.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
       multiple: true,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets) {
       setMedia(result.assets);
     }
   };

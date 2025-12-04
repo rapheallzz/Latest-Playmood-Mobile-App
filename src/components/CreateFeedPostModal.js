@@ -7,13 +7,17 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
   const [media, setMedia] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  const resetStateAndClose = () => {
+    setCaption('');
+    setMedia([]);
+    onClose();
+  };
+
   const handleFileChange = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 1,
-      multiple: true,
+      allowsMultipleSelection: true,
     });
 
     if (!result.canceled) {
@@ -31,9 +35,8 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
     try {
       await onCreateFeedPost(caption, media);
       setIsUploading(false);
-      // Use the Alert callback to close the modal, ensuring state is updated first
       Alert.alert('Success', 'Feed post created successfully!', [
-        { text: 'OK', onPress: () => onClose() },
+        { text: 'OK', onPress: resetStateAndClose },
       ]);
     } catch (error) {
       setIsUploading(false);
@@ -67,7 +70,7 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
           )}
 
           <View style={styles.buttonsContainer}>
-            <Pressable style={styles.cancelButton} onPress={onClose}>
+            <Pressable style={styles.cancelButton} onPress={resetStateAndClose}>
               <Text style={styles.buttonText}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.submitButton} onPress={handleSubmit} disabled={isUploading}>

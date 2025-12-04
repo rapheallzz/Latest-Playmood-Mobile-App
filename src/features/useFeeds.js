@@ -59,21 +59,30 @@ const useFeeds = (user, creatorId = null) => {
 
         return axios.post(cloudinaryUrl, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
-        }).then(response => ({
-          ...response.data,
-          type: resourceType,
-        }));
+        }).then(response => response.data);
       });
 
       const cloudinaryResponses = await Promise.all(uploadPromises);
 
       // 3. Create feed post on your server
-      const media = cloudinaryResponses.map(res => ({
-        url: res.secure_url,
-        public_id: res.public_id,
-      }));
+      const media = cloudinaryResponses.map(res => {
+        const mediaData = {
+          url: res.secure_url,
+          public_id: res.public_id,
+        };
 
-      const postType = cloudinaryResponses.length > 0 ? cloudinaryResponses[0].type : 'image';
+        if (res.resource_type === 'image') {
+          // The API schema requires a thumbnail object. For images, we use the image itself.
+          mediaData.thumbnail = {
+            url: res.secure_url,
+            public_id: res.public_id,
+          };
+        }
+        // TODO: For videos, a thumbnail must be generated during upload and extracted here.
+        return mediaData;
+      });
+
+      const postType = cloudinaryResponses.length > 0 ? cloudinaryResponses[0].resource_type : 'image';
 
       const response = await api.post('/api/feed', {
         caption,

@@ -23,7 +23,8 @@ export default function UploadScreen() {
   const [description, setDescription] = useState('');
   const [credit, setCredit] = useState('');
   const [category, setCategory] = useState('Fashion Show');
-  const [files, setFiles] = useState([]);
+  const [videoFile, setVideoFile] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   const [videoAsset, setVideoAsset] = useState(null);
   const [previewStart, setPreviewStart] = useState('0');
   const [previewEnd, setPreviewEnd] = useState('10');
@@ -44,13 +45,22 @@ export default function UploadScreen() {
 
     if (!result.canceled) {
       const selectedAssets = result.assets || [];
-      setFiles(selectedAssets);
       const video = selectedAssets.find(asset => asset.type === 'video');
+      const thumbnail = selectedAssets.find(asset => asset.type === 'image');
+
       if (video) {
-        setVideoAsset(video);
+        setVideoFile(video);
+        setVideoAsset(video); // for preview
         setPreviewEnd(String(Math.min(10, (video.duration || 10000) / 1000)));
       } else {
+        setVideoFile(null);
         setVideoAsset(null);
+      }
+
+      if (thumbnail) {
+        setThumbnailFile(thumbnail);
+      } else {
+        setThumbnailFile(null);
       }
     }
   };
@@ -60,8 +70,8 @@ export default function UploadScreen() {
         Alert.alert('Error', 'Title and description are required.');
         return;
     }
-    if (!files || files.length === 0) {
-        Alert.alert('Error', 'Please select at least one file to upload.');
+    if (!videoFile) {
+        Alert.alert('Error', 'Please select a video file to upload.');
         return;
     }
 
@@ -71,45 +81,90 @@ export default function UploadScreen() {
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('credit', credit);
-    formData.append('category', category);
-    formData.append('userId', loggedInUser._id);
-    formData.append('previewStart', previewStart);
-    formData.append('previewEnd', previewEnd);
 
-    files.forEach(asset => {
-        const uriParts = asset.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        formData.append('files', {
-            uri: asset.uri,
-            name: asset.fileName || `upload.${fileType}`,
-            type: `${asset.type}/${fileType}`,
-        });
-    });
+    const uploadToCloudinary = async (file, fileType) => {
+        try {
+            const signatureResponse = await axios.post(
+                'https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content/signature',
+                { type: fileType === 'video' ? 'videos' : 'images' },
+                { headers: { Authorization: `Bearer ${loggedInUser.token}` } }
+            );
+
+            const { signature, timestamp, api_key, cloud_name } = signatureResponse.data;
+            const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/${fileType === 'video' ? 'video' : 'image'}/upload`;
+
+            const cloudinaryFormData = new FormData();
+            cloudinaryFormData.append('file', {
+                uri: file.uri,
+                name: file.fileName || `upload.${file.uri.split('.').pop()}`,
+                type: `${file.type}/${file.uri.split('.').pop()}`,
+            });
+            cloudinaryFormData.append('api_key', api_key);
+            cloudinaryFormData.append('timestamp', timestamp);
+            cloudinaryFormData.append('signature', signature);
+
+            const cloudinaryResponse = await axios.post(cloudinaryUrl, cloudinaryFormData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            return {
+                public_id: cloudinaryResponse.data.public_id,
+                url: cloudinaryResponse.data.secure_url,
+            };
+        } catch (error) {
+            console.error(`Error uploading ${fileType} to Cloudinary:`, error.response?.data || error.message);
+            Alert.alert('Upload Error', `Failed to upload ${fileType}.`);
+            return null;
+        }
+    };
 
     try {
-        const token = loggedInUser.token;
-        await axios.post(
-            `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`,
-            formData,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
-                transformRequest: (data, headers) => formData,
-            }
-        );
+      const videoData = await uploadToCloudinary(videoFile, 'video');
+      if (!videoData) {
+        setIsUploading(false);
+        return;
+      }
 
-        Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-        navigation.goBack();
+      let thumbnailData = null;
+      if (thumbnailFile) {
+        thumbnailData = await uploadToCloudinary(thumbnailFile, 'image');
+        if (!thumbnailData) {
+          setIsUploading(false);
+          return;
+        }
+      }
+
+      const finalPayload = {
+        title,
+        description,
+        credit,
+        category,
+        userId: loggedInUser._id,
+        previewStart: parseFloat(previewStart),
+        previewEnd: parseFloat(previewEnd),
+        languageCode: 'en-US',
+        video: videoData,
+        ...(thumbnailData && { thumbnail: thumbnailData }),
+      };
+
+      await axios.post(
+        'https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content',
+        finalPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${loggedInUser.token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
+      navigation.goBack();
 
     } catch (err) {
-        console.error('Error uploading video:', err.response?.data || err.message);
-        Alert.alert('Error', 'Failed to upload video.');
+        const errorMessage = err.response?.data?.error || 'An unexpected error occurred during the final step of the upload.';
+        console.error('Error during final content submission:', errorMessage);
+        Alert.alert('Submission Error', errorMessage);
     } finally {
         setIsUploading(false);
     }
@@ -135,9 +190,10 @@ export default function UploadScreen() {
 
             <Text style={styles.label}>Video and Thumbnail</Text>
             <Pressable style={styles.button} onPress={handleFilePick}>
-              <Text style={styles.buttonText}>Select Files</Text>
+              <Text style={styles.buttonText}>Select Video & Thumbnail</Text>
             </Pressable>
-            {files.length > 0 && <Text style={styles.fileInfo}>{files.length} file(s) selected</Text>}
+            {videoFile && <Text style={styles.fileInfo}>Video selected: {videoFile.fileName}</Text>}
+            {thumbnailFile && <Text style={styles.fileInfo}>Thumbnail selected: {thumbnailFile.fileName}</Text>}
 
             {videoAsset && (
               <View style={styles.videoContainer}>

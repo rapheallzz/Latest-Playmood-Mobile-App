@@ -38,8 +38,8 @@ const useFeeds = (user, creatorId = null) => {
       }
 
       // 1. Get signature from your server
-      const signatureResponse = await api.get('/api/content/signature');
-      const { signature, timestamp, folder, api_key } = signatureResponse.data;
+      const signatureResponse = await api.post('/api/content/signature', { type: 'images' });
+      const { signature, timestamp, api_key } = signatureResponse.data;
 
       // 2. Upload files to Cloudinary
       const uploadPromises = mediaFiles.map(file => {
@@ -55,31 +55,25 @@ const useFeeds = (user, creatorId = null) => {
         formData.append('api_key', api_key);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        formData.append('folder', folder);
 
         return axios.post(cloudinaryUrl, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         }).then(response => ({
-          ...response.data,
-          type: resourceType,
+          url: response.data.secure_url,
+          public_id: response.data.public_id,
         }));
       });
 
-      const cloudinaryResponses = await Promise.all(uploadPromises);
+      const uploadedMedia = await Promise.all(uploadPromises);
 
       // 3. Create feed post on your server
-      const media = cloudinaryResponses.map(res => ({
-        url: res.secure_url,
-        public_id: res.public_id,
-      }));
-
-      const postType = cloudinaryResponses.length > 0 ? cloudinaryResponses[0].type : 'image';
-
-      const response = await api.post('/api/feed', {
+      const postData = {
         caption,
-        media,
-        type: postType,
-      });
+        type: 'image',
+        media: uploadedMedia,
+      };
+
+      const response = await api.post('/api/feed', postData);
 
       await fetchFeeds(); // Refresh feeds after successful post
       return response.data; // Return response data to the component

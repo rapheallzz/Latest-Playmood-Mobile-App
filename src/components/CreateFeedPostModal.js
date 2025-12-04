@@ -35,7 +35,7 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
     try {
       await onCreateFeedPost(caption, media);
       setIsUploading(false);
-      Alert.alert('Success', 'Feed post created successfully!', [
+      Alert.alert('Success!', 'Your post has been successfully published.', [
         { text: 'OK', onPress: resetStateAndClose },
       ]);
     } catch (error) {

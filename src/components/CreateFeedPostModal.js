@@ -28,9 +28,15 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
     }
 
     setIsUploading(true);
-    await onCreateFeedPost(caption, media);
-    setIsUploading(false);
-    onClose();
+    try {
+      await onCreateFeedPost(caption, media);
+      Alert.alert('Success', 'Feed post created successfully!');
+      onClose(); // Close the modal on success
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to create feed post.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (

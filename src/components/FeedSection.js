@@ -25,15 +25,17 @@ const FeedSection = ({ user, creatorId, onPostClick }) => {
       numColumns={3}
       renderItem={({ item, index }) => (
         <Pressable style={styles.feedItem} onPress={() => onPostClick(item, index)}>
-          <Image source={{ uri: item.media[0].url }} style={styles.feedImage} />
+          {item.media && item.media[0] && item.media[0].url && (
+            <Image source={{ uri: item.media[0].url }} style={styles.feedImage} />
+          )}
           <View style={styles.overlay}>
             <View style={styles.iconContainer}>
               <FontAwesome name="heart" size={16} color="white" />
-              <Text style={styles.iconText}>{item.likes.length}</Text>
+              <Text style={styles.iconText}>{item.likes?.length || 0}</Text>
             </View>
             <View style={styles.iconContainer}>
               <FontAwesome name="comment" size={16} color="white" />
-              <Text style={styles.iconText}>{item.comments.length}</Text>
+              <Text style={styles.iconText}>{item.comments?.length || 0}</Text>
             </View>
           </View>
         </Pressable>

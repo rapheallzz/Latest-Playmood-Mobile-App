@@ -32,27 +32,28 @@ const useFeeds = (user, creatorId = null) => {
   }, [user?._id, creatorId]);
 
   const createFeedPost = async (caption, mediaFiles) => {
-    if (!user) return;
-    try {
-      const formData = new FormData();
-      formData.append('caption', caption);
-      mediaFiles.forEach((file) => {
-        formData.append('media', {
-          uri: file.uri,
-          name: file.fileName,
-          type: file.mimeType,
-        });
-      });
-
-      const response = await api.post('/api/feed', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setFeeds([response.data, ...feeds]);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create feed post.');
+    if (!user) {
+      throw new Error('User not authenticated');
     }
+
+    const formData = new FormData();
+    formData.append('caption', caption);
+    mediaFiles.forEach((file) => {
+      formData.append('media', {
+        uri: file.uri,
+        name: file.fileName,
+        type: file.mimeType,
+      });
+    });
+
+    const response = await api.post('/api/feed/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    await fetchFeeds(); // Refresh feeds after successful post
+    return response.data; // Return response data to the component
   };
 
   useEffect(() => {

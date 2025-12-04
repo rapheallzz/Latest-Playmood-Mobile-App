@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faHistory, faCookieBite, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import tw from 'tailwind-react-native-classnames'; 
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, setUser } from '../features/authSlice';
+import { logout, setUser, fetchUser } from '../features/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import EditProfileModal from '../components/EditProfileModal';
 import axios from 'axios';
@@ -35,14 +35,12 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  useEffect(() => {
+    dispatch(fetchUser());
+  }, [dispatch]);
+
   const handleLogout = () => {
-    dispatch(logout()).then(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth' }],
-      });
-      console.log('logout success');
-    });
+    dispatch(logout());
   };
 
   const handleUpdateProfile = async () => {

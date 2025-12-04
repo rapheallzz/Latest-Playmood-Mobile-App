@@ -31,14 +31,6 @@ export default function HomeScreen() {
     navigation.navigate('ContentDetails'); 
   };
 
-  useEffect(() => {
-    if (!user.id) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth' }],
-      });
-    }
-  }, [user.id, navigation]);
 
   return (
     <View style={tw`flex-1 bg-black`}>
@@ -59,4 +51,3 @@ export default function HomeScreen() {
     </View>
   );
 }
- 

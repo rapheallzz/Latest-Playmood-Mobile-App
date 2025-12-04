@@ -63,6 +63,23 @@ export const checkUserLoggedIn = createAsyncThunk('auth/checkUserLoggedIn', asyn
   }
 });
 
+export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.userToken;
+    if (!token) {
+      return thunkAPI.rejectWithValue('No token found');
+    }
+    const user = await authService.getUser(token);
+    return user;
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      thunkAPI.dispatch(logout());
+      return thunkAPI.rejectWithValue('Unauthorized. Logging out.');
+    }
+    return thunkAPI.rejectWithValue('Failed to fetch user data. Please try again later.');
+  }
+});
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -125,6 +142,20 @@ const authSlice = createSlice({
       })
       .addCase(checkUserLoggedIn.rejected, (state) => {
         state.isLoading = false;
+        state.user = null;
+        state.userToken = null;
+      })
+      .addCase(fetchUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+      })
+      .addCase(fetchUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
         state.user = null;
         state.userToken = null;
       });

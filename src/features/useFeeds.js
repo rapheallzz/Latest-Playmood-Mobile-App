@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import BASE_API_URL from '../apiConfig';
+import BASE_API_URL, { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
 
 const useFeeds = (user, creatorId = null) => {
   const [feeds, setFeeds] = useState([]);
@@ -32,28 +32,73 @@ const useFeeds = (user, creatorId = null) => {
   }, [user?._id, creatorId]);
 
   const createFeedPost = async (caption, mediaFiles) => {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
 
-    const formData = new FormData();
-    formData.append('caption', caption);
-    mediaFiles.forEach((file) => {
-      formData.append('media', {
-        uri: file.uri,
-        name: file.fileName,
-        type: file.mimeType,
+      // 1. Get signature from your server
+      const signatureResponse = await api.get('/api/content/signature');
+      const { signature, timestamp, folder, api_key } = signatureResponse.data;
+
+      // 2. Upload files to Cloudinary
+      const uploadPromises = mediaFiles.map(file => {
+        const resourceType = file.mimeType.startsWith('video') ? 'video' : 'image';
+        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
+
+        const formData = new FormData();
+        formData.append('file', {
+          uri: file.uri,
+          name: file.fileName,
+          type: file.mimeType,
+        });
+        formData.append('api_key', api_key);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        formData.append('folder', folder);
+
+        return axios.post(cloudinaryUrl, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }).then(response => ({
+          ...response.data,
+          type: resourceType,
+        }));
       });
-    });
 
-    const response = await api.post('/api/feed/create', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+      const cloudinaryResponses = await Promise.all(uploadPromises);
 
-    await fetchFeeds(); // Refresh feeds after successful post
-    return response.data; // Return response data to the component
+      // 3. Create feed post on your server
+      const media = cloudinaryResponses.map(res => ({
+        url: res.secure_url,
+        public_id: res.public_id,
+      }));
+
+      const postType = cloudinaryResponses.length > 0 ? cloudinaryResponses[0].type : 'image';
+
+      const response = await api.post('/api/feed', {
+        caption,
+        media,
+        type: postType,
+      });
+
+      await fetchFeeds(); // Refresh feeds after successful post
+      return response.data; // Return response data to the component
+    } catch (error) {
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Error data:", error.response.data);
+        console.error("Error status:", error.response.status);
+        console.error("Error headers:", error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error("Error request:", error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error('Error message:', error.message);
+      }
+      throw error;
+    }
   };
 
   useEffect(() => {

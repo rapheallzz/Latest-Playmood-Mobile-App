@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, StyleSheet, Pressable, TextInput, Alert } from 'react-native';
+import { View, Text, Modal, StyleSheet, Pressable, TextInput, Alert, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
@@ -28,9 +28,17 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
     }
 
     setIsUploading(true);
-    await onCreateFeedPost(caption, media);
-    setIsUploading(false);
-    onClose();
+    try {
+      await onCreateFeedPost(caption, media);
+      setIsUploading(false);
+      // Use the Alert callback to close the modal, ensuring state is updated first
+      Alert.alert('Success', 'Feed post created successfully!', [
+        { text: 'OK', onPress: () => onClose() },
+      ]);
+    } catch (error) {
+      setIsUploading(false);
+      Alert.alert('Error', error.message || 'Failed to create feed post.');
+    }
   };
 
   return (
@@ -49,6 +57,15 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
           <Pressable style={styles.mediaButton} onPress={handleFileChange}>
             <Text style={styles.buttonText}>Select Media</Text>
           </Pressable>
+
+          {media.length > 0 && (
+            <ScrollView horizontal style={styles.mediaPreviewContainer}>
+              {media.map((item, index) => (
+                <Image key={index} source={{ uri: item.uri }} style={styles.previewImage} />
+              ))}
+            </ScrollView>
+          )}
+
           <View style={styles.buttonsContainer}>
             <Pressable style={styles.cancelButton} onPress={onClose}>
               <Text style={styles.buttonText}>Cancel</Text>
@@ -119,6 +136,15 @@ const styles = StyleSheet.create({
       buttonText: {
         color: 'white',
         fontSize: 16,
+      },
+      mediaPreviewContainer: {
+        marginBottom: 15,
+      },
+      previewImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 5,
+        marginRight: 10,
       },
 });
 

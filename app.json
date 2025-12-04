@@ -17,7 +17,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to let you upload images and videos."
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to let you upload images and videos.",
+        "NSCameraUsageDescription": "This app needs access to your camera to let you record and upload videos."
       }
     },
     "android": {
@@ -28,7 +29,9 @@
       "package": "com.rightsort.playmoodapp",
       "permissions": [
         "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "CAMERA",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {

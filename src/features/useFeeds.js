@@ -44,7 +44,7 @@ const useFeeds = (user, creatorId = null) => {
         });
       });
 
-      const response = await api.post('/api/feed', formData, {
+      const response = await api.post('/api/feed/create', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

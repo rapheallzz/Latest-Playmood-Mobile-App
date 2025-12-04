@@ -6,6 +6,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import MobileHeader from '../components/MobileHeader';
+import BASE_API_URL, { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
 
 const VideoPlayer = ({ videoAsset }) => {
   const player = useVideoPlayer(videoAsset.uri, (player) => {
@@ -71,47 +72,90 @@ export default function UploadScreen() {
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('credit', credit);
-    formData.append('category', category);
-    formData.append('userId', loggedInUser._id);
-    formData.append('previewStart', previewStart);
-    formData.append('previewEnd', previewEnd);
+    const videoAsset = files.find(asset => asset.type === 'video');
+    const thumbnailAsset = files.find(asset => asset.type === 'image');
 
-    files.forEach(asset => {
-        const uriParts = asset.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        formData.append('files', {
-            uri: asset.uri,
-            name: asset.fileName || `upload.${fileType}`,
-            type: `${asset.type}/${fileType}`,
-        });
-    });
+    if (!videoAsset) {
+      Alert.alert('Error', 'Please select a video file to upload.');
+      return;
+    }
 
     try {
-        const token = loggedInUser.token;
-        await axios.post(
-            `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`,
-            formData,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
-                transformRequest: (data, headers) => formData,
-            }
-        );
+      const token = loggedInUser.token;
+      const api = axios.create({
+        baseURL: BASE_API_URL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-        Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-        navigation.goBack();
+      // 1. Get signature for video
+      const videoSigResponse = await api.post('/api/content/signature', { type: 'videos' });
+      const videoSigData = videoSigResponse.data;
+
+      // 2. Upload video to Cloudinary
+      const uploadToCloudinary = async (asset, sigData, resourceType) => {
+        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
+        const formData = new FormData();
+        formData.append('file', {
+          uri: asset.uri,
+          name: asset.fileName,
+          type: asset.mimeType,
+        });
+        formData.append('api_key', sigData.api_key);
+        formData.append('timestamp', sigData.timestamp);
+        formData.append('signature', sigData.signature);
+
+        const response = await axios.post(cloudinaryUrl, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+      };
+
+      const videoUploadResponse = await uploadToCloudinary(videoAsset, videoSigData, 'video');
+
+      // 3. Handle thumbnail upload (if a thumbnail is provided)
+      let thumbnailUploadResponse = null;
+      if (thumbnailAsset) {
+        const thumbSigResponse = await api.post('/api/content/signature', { type: 'images' });
+        const thumbSigData = thumbSigResponse.data;
+        thumbnailUploadResponse = await uploadToCloudinary(thumbnailAsset, thumbSigData, 'image');
+      }
+
+      // 4. Construct the final payload
+      const finalPayload = {
+        title,
+        description,
+        credit,
+        category,
+        userId: loggedInUser._id,
+        previewStart,
+        previewEnd,
+        languageCode: 'en-US',
+        video: {
+          public_id: videoUploadResponse.public_id,
+          url: videoUploadResponse.secure_url,
+        },
+        ...(thumbnailUploadResponse && {
+          thumbnail: {
+            public_id: thumbnailUploadResponse.public_id,
+            url: thumbnailUploadResponse.secure_url,
+          },
+        }),
+      };
+
+      // 5. Post the final payload to your server
+      await api.post('/api/content', finalPayload);
+
+      Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
+      navigation.goBack();
 
     } catch (err) {
-        console.error('Error uploading video:', err.response?.data || err.message);
-        Alert.alert('Error', 'Failed to upload video.');
+      console.error('Error uploading video:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to upload video.');
     } finally {
-        setIsUploading(false);
+      setIsUploading(false);
     }
   };
 

@@ -125,10 +125,12 @@ export default function UploadScreen() {
 
       // 4. Construct the final payload
       const finalPayload = {
-        title,
-        description,
-        credit,
-        category,
+        videoMetadata: {
+          title,
+          description,
+          credit,
+          category,
+        },
         userId: loggedInUser._id,
         previewStart,
         previewEnd,

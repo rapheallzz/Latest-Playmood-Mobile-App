@@ -201,6 +201,19 @@ const likeFeedPost = async ({ feedId, token }) => {
     }
   };
 
+const getSignature = async (type, token) => {
+  const response = await axios.post(
+    `${API_URL}/content/signature`,
+    { type },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
 export default {
   fetchContent,
   addToFavorites,
@@ -219,4 +232,5 @@ export default {
   likeFeedPost,
   unlikeFeedPost,
   commentOnFeedPost,
+  getSignature,
 };

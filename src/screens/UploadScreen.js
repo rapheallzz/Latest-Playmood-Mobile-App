@@ -155,8 +155,16 @@ export default function UploadScreen() {
         previewStart,
         previewEnd,
         languageCode: 'en-US',
-        video: videoCloudinaryResponse,
-        thumbnail: thumbnailCloudinaryResponse,
+        video: {
+          public_id: videoCloudinaryResponse.data.public_id,
+          url: videoCloudinaryResponse.data.secure_url,
+        },
+        thumbnail: thumbnailCloudinaryResponse
+          ? {
+              public_id: thumbnailCloudinaryResponse.data.public_id,
+              url: thumbnailCloudinaryResponse.data.secure_url,
+            }
+          : undefined,
       };
 
       await axios.post(

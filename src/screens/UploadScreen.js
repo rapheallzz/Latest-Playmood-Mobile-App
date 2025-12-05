@@ -104,7 +104,6 @@ export default function UploadScreen() {
       videoUploadData.append('api_key', videoSignatureResponse.api_key);
       videoUploadData.append('timestamp', videoSignatureResponse.timestamp);
       videoUploadData.append('signature', videoSignatureResponse.signature);
-      videoUploadData.append('folder', videoSignatureResponse.folder);
 
       const videoCloudinaryResponse = await axios.post(
         `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
@@ -134,7 +133,6 @@ export default function UploadScreen() {
         thumbnailUploadData.append('api_key', thumbnailSignatureResponse.api_key);
         thumbnailUploadData.append('timestamp', thumbnailSignatureResponse.timestamp);
         thumbnailUploadData.append('signature', thumbnailSignatureResponse.signature);
-        thumbnailUploadData.append('folder', thumbnailSignatureResponse.folder);
 
         thumbnailCloudinaryResponse = await axios.post(
           `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,

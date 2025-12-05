@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
+import { uploadFile } from '../features/upload/uploadSlice';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import axios from 'axios';
+import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import MobileHeader from '../components/MobileHeader';
-import BASE_API_URL, { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
 
 const VideoPlayer = ({ videoAsset }) => {
   const player = useVideoPlayer(videoAsset.uri, (player) => {
@@ -16,10 +16,17 @@ const VideoPlayer = ({ videoAsset }) => {
   return <VideoView style={styles.video} player={player} allowsFullscreen nativeControls />;
 };
 
+const ProgressBar = ({ progress }) => (
+  <View style={styles.progressBarContainer}>
+    <View style={[styles.progressBar, { width: `${progress}%` }]} />
+  </View>
+);
+
 export default function UploadScreen() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const { user: loggedInUser } = useSelector((state) => state.auth);
-
+  const { isUploading, uploads } = useSelector((state) => state.upload);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [credit, setCredit] = useState('');
@@ -28,7 +35,14 @@ export default function UploadScreen() {
   const [videoAsset, setVideoAsset] = useState(null);
   const [previewStart, setPreviewStart] = useState('0');
   const [previewEnd, setPreviewEnd] = useState('10');
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    const currentUpload = uploads[uploads.length - 1];
+    if (currentUpload) {
+      setUploadProgress(currentUpload.progress);
+    }
+  }, [uploads]);
 
   const handleFilePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -58,105 +72,38 @@ export default function UploadScreen() {
 
   const handleUpload = async () => {
     if (!title.trim() || !description.trim()) {
-        Alert.alert('Error', 'Title and description are required.');
-        return;
+      Alert.alert('Error', 'Title and description are required.');
+      return;
     }
     if (!files || files.length === 0) {
-        Alert.alert('Error', 'Please select at least one file to upload.');
-        return;
+      Alert.alert('Error', 'Please select at least one file to upload.');
+      return;
     }
-
     if (!loggedInUser || !loggedInUser.token) {
-        Alert.alert('Error', 'You must be logged in to upload a video.');
-        return;
+      Alert.alert('Error', 'You must be logged in to upload a video.');
+      return;
     }
 
-    setIsUploading(true);
-    const videoAsset = files.find(asset => asset.type === 'video');
-    const thumbnailAsset = files.find(asset => asset.type === 'image');
+    const videoFile = files.find(asset => asset.type === 'video');
+    const thumbnailFile = files.find(asset => asset.type === 'image');
 
-    if (!videoAsset) {
+    if (!videoFile) {
       Alert.alert('Error', 'Please select a video file to upload.');
       return;
     }
 
-    try {
-      const token = loggedInUser.token;
-      const api = axios.create({
-        baseURL: BASE_API_URL,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+    const videoMetadata = { title, description, credit, category };
+
+    dispatch(uploadFile({ videoFile, thumbnailFile, videoMetadata, previewStart, previewEnd }))
+      .unwrap()
+      .then(() => {
+        Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
+        navigation.goBack();
+      })
+      .catch((error) => {
+        console.error('Error uploading video:', error);
+        Alert.alert('Error', `Failed to upload video: ${error.error}`);
       });
-
-      // 1. Get signature for video
-      const videoSigResponse = await api.post('/api/content/signature', { type: 'videos' });
-      const videoSigData = videoSigResponse.data;
-
-      // 2. Upload video to Cloudinary
-      const uploadToCloudinary = async (asset, sigData, resourceType) => {
-        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-        const formData = new FormData();
-        formData.append('file', {
-          uri: asset.uri,
-          name: asset.fileName,
-          type: asset.mimeType,
-        });
-        formData.append('api_key', sigData.api_key);
-        formData.append('timestamp', sigData.timestamp);
-        formData.append('signature', sigData.signature);
-
-        const response = await axios.post(cloudinaryUrl, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return response.data;
-      };
-
-      const videoUploadResponse = await uploadToCloudinary(videoAsset, videoSigData, 'video');
-
-      // 3. Handle thumbnail upload (if a thumbnail is provided)
-      let thumbnailUploadResponse = null;
-      if (thumbnailAsset) {
-        const thumbSigResponse = await api.post('/api/content/signature', { type: 'images' });
-        const thumbSigData = thumbSigResponse.data;
-        thumbnailUploadResponse = await uploadToCloudinary(thumbnailAsset, thumbSigData, 'image');
-      }
-
-      // 4. Construct the final payload
-      const finalPayload = {
-        title,
-        description,
-        credit,
-        category,
-        userId: loggedInUser._id,
-        previewStart,
-        previewEnd,
-        languageCode: 'en-US',
-        video: {
-          public_id: videoUploadResponse.public_id,
-          url: videoUploadResponse.secure_url,
-        },
-        ...(thumbnailUploadResponse && {
-          thumbnail: {
-            public_id: thumbnailUploadResponse.public_id,
-            url: thumbnailUploadResponse.secure_url,
-          },
-        }),
-      };
-
-      // 5. Post the final payload to your server
-      await api.post('/api/content', finalPayload);
-
-      Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-      navigation.goBack();
-
-    } catch (err) {
-      console.error('Error uploading video:', err.response?.data || err.message);
-      Alert.alert('Error', 'Failed to upload video.');
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   return (
@@ -175,7 +122,21 @@ export default function UploadScreen() {
             <TextInput style={styles.input} value={credit} onChangeText={setCredit} placeholder="Credits" placeholderTextColor="#888" />
 
             <Text style={styles.label}>Category</Text>
-            <TextInput style={styles.input} value={category} onChangeText={setCategory} placeholder="Category" placeholderTextColor="#888" />
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={category}
+                style={styles.picker}
+                onValueChange={(itemValue) => setCategory(itemValue)}
+                dropdownIconColor="white"
+              >
+                <Picker.Item label="Fashion Show" value="Fashion Show" />
+                <Picker.Item label="Teens" value="Teen" />
+                <Picker.Item label="Documentaries" value="Documentarie" />
+                <Picker.Item label="Interviews" value="Interview" />
+                <Picker.Item label="Social" value="Social" />
+                <Picker.Item label="Behind the camera" value="Behind the camera" />
+              </Picker>
+            </View>
 
             <Text style={styles.label}>Video and Thumbnail</Text>
             <Pressable style={styles.button} onPress={handleFilePick}>
@@ -194,6 +155,7 @@ export default function UploadScreen() {
               </View>
             )}
 
+            {isUploading && <ProgressBar progress={uploadProgress} />}
             <Pressable style={[styles.button, styles.uploadButton]} onPress={handleUpload} disabled={isUploading}>
               {isUploading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Upload</Text>}
             </Pressable>
@@ -206,6 +168,27 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'black',
+    },
+    pickerContainer: {
+      width: '100%',
+      backgroundColor: '#333',
+      borderRadius: 5,
+      marginBottom: 15,
+    },
+    picker: {
+      color: 'white',
+    },
+    progressBarContainer: {
+      height: 10,
+      width: '100%',
+      backgroundColor: '#555',
+      borderRadius: 5,
+      marginTop: 20,
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: '#541011',
+      borderRadius: 5,
     },
     scrollView: {
         width: '100%',

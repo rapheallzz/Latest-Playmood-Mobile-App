@@ -6,6 +6,8 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import MobileHeader from '../components/MobileHeader';
+import contentService from '../features/contentService';
+import { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
 
 const VideoPlayer = ({ videoAsset }) => {
   const player = useVideoPlayer(videoAsset.uri, (player) => {
@@ -25,9 +27,11 @@ export default function UploadScreen() {
   const [category, setCategory] = useState('Fashion Show');
   const [files, setFiles] = useState([]);
   const [videoAsset, setVideoAsset] = useState(null);
+  const [thumbnailAsset, setThumbnailAsset] = useState(null);
   const [previewStart, setPreviewStart] = useState('0');
   const [previewEnd, setPreviewEnd] = useState('10');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFilePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -46,72 +50,136 @@ export default function UploadScreen() {
       const selectedAssets = result.assets || [];
       setFiles(selectedAssets);
       const video = selectedAssets.find(asset => asset.type === 'video');
+      const thumbnail = selectedAssets.find(asset => asset.type === 'image');
       if (video) {
         setVideoAsset(video);
         setPreviewEnd(String(Math.min(10, (video.duration || 10000) / 1000)));
       } else {
         setVideoAsset(null);
       }
+      if (thumbnail) {
+        setThumbnailAsset(thumbnail);
+      } else {
+        setThumbnailAsset(null);
+      }
     }
   };
 
   const handleUpload = async () => {
     if (!title.trim() || !description.trim()) {
-        Alert.alert('Error', 'Title and description are required.');
-        return;
+      Alert.alert('Error', 'Title and description are required.');
+      return;
     }
-    if (!files || files.length === 0) {
-        Alert.alert('Error', 'Please select at least one file to upload.');
-        return;
+    if (!videoAsset) {
+      Alert.alert('Error', 'Please select a video to upload.');
+      return;
     }
 
     if (!loggedInUser || !loggedInUser.token) {
-        Alert.alert('Error', 'You must be logged in to upload a video.');
-        return;
+      Alert.alert('Error', 'You must be logged in to upload a video.');
+      return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('credit', credit);
-    formData.append('category', category);
-    formData.append('userId', loggedInUser._id);
-    formData.append('previewStart', previewStart);
-    formData.append('previewEnd', previewEnd);
-
-    files.forEach(asset => {
-        const uriParts = asset.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        formData.append('files', {
-            uri: asset.uri,
-            name: asset.fileName || `upload.${fileType}`,
-            type: `${asset.type}/${fileType}`,
-        });
-    });
+    setUploadProgress(0);
 
     try {
-        const token = loggedInUser.token;
-        await axios.post(
-            `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`,
-            formData,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
-                transformRequest: (data, headers) => formData,
-            }
-        );
+      // Get signatures for video and thumbnail
+      const videoSignatureResponse = await contentService.getSignature('videos');
+      let thumbnailSignatureResponse;
+      if (thumbnailAsset) {
+        thumbnailSignatureResponse = await contentService.getSignature('images');
+      }
 
-        Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-        navigation.goBack();
+      // Upload video to Cloudinary
+      const videoUploadData = new FormData();
+      const videoUriParts = videoAsset.uri.split('.');
+      const videoFileType = videoUriParts[videoUriParts.length - 1];
+      videoUploadData.append('file', {
+        uri: videoAsset.uri,
+        name: videoAsset.fileName || `upload.${videoFileType}`,
+        type: `${videoAsset.type}/${videoFileType}`,
+      });
+      videoUploadData.append('api_key', videoSignatureResponse.api_key);
+      videoUploadData.append('timestamp', videoSignatureResponse.timestamp);
+      videoUploadData.append('signature', videoSignatureResponse.signature);
+      videoUploadData.append('folder', videoSignatureResponse.folder);
+
+      const videoCloudinaryResponse = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
+        videoUploadData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          },
+        }
+      );
+
+      // Upload thumbnail to Cloudinary
+      let thumbnailCloudinaryResponse;
+      if (thumbnailAsset && thumbnailSignatureResponse) {
+        const thumbnailUploadData = new FormData();
+        const thumbnailUriParts = thumbnailAsset.uri.split('.');
+        const thumbnailFileType = thumbnailUriParts[thumbnailUriParts.length - 1];
+        thumbnailUploadData.append('file', {
+          uri: thumbnailAsset.uri,
+          name: thumbnailAsset.fileName || `upload.${thumbnailFileType}`,
+          type: `${thumbnailAsset.type}/${thumbnailFileType}`,
+        });
+        thumbnailUploadData.append('api_key', thumbnailSignatureResponse.api_key);
+        thumbnailUploadData.append('timestamp', thumbnailSignatureResponse.timestamp);
+        thumbnailUploadData.append('signature', thumbnailSignatureResponse.signature);
+        thumbnailUploadData.append('folder', thumbnailSignatureResponse.folder);
+
+        thumbnailCloudinaryResponse = await axios.post(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+          thumbnailUploadData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+      }
+
+      // Send data to your server
+      const serverPayload = {
+        title,
+        description,
+        credit,
+        category,
+        userId: loggedInUser._id,
+        previewStart,
+        previewEnd,
+        languageCode: 'en-US',
+        video: videoCloudinaryResponse,
+        thumbnail: thumbnailCloudinaryResponse,
+      };
+
+      const token = loggedInUser.token;
+      await axios.post(
+        `https://playmoodserver-stg-0fb54b955e6b.herokuapp.com/api/content`,
+        serverPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
+      navigation.goBack();
 
     } catch (err) {
-        console.error('Error uploading video:', err.response?.data || err.message);
-        Alert.alert('Error', 'Failed to upload video.');
+      console.error('Error uploading video:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to upload video.');
     } finally {
-        setIsUploading(false);
+      setIsUploading(false);
     }
   };
 
@@ -147,6 +215,19 @@ export default function UploadScreen() {
                     <TextInput style={styles.previewInput} value={previewStart} onChangeText={setPreviewStart} keyboardType="numeric" placeholder="Start"/>
                     <TextInput style={styles.previewInput} value={previewEnd} onChangeText={setPreviewEnd} keyboardType="numeric" placeholder="End"/>
                 </View>
+              </View>
+            )}
+
+            {isUploading && (
+              <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>Uploading: {uploadProgress}%</Text>
+              </View>
+            )}
+
+            {isUploading && (
+              <View style={styles.progressContainer}>
+                <ActivityIndicator size="large" color="#541011" />
+                <Text style={styles.progressText}>Uploading: {uploadProgress}%</Text>
               </View>
             )}
 
@@ -241,5 +322,14 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginHorizontal: 5,
         textAlign: 'center',
+    },
+    progressContainer: {
+        width: '100%',
+        alignItems: 'center',
+        marginVertical: 10,
+    },
+    progressText: {
+        color: 'white',
+        fontSize: 16,
     },
 });

@@ -32,7 +32,19 @@ export default function UploadScreen() {
 
   useEffect(() => {
     if (error) {
-      Alert.alert('Error', 'Failed to upload video.');
+      // Log the full error for debugging
+      console.error('Upload Error:', error);
+
+      // Determine the message to show to the user
+      let displayMessage = 'Failed to upload video. Please try again.'; // Default message
+      if (typeof error === 'string') {
+        displayMessage = error;
+      } else if (typeof error === 'object' && error !== null) {
+        // Look for a 'message' or 'error' property in the object
+        displayMessage = error.message || error.error || JSON.stringify(error);
+      }
+
+      Alert.alert('Upload Failed', displayMessage);
     }
   }, [error]);
 

@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import MobileHeader from '../components/MobileHeader';
-import BASE_API_URL, { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
+import { uploadFile } from '../features/uploadSlice';
 
 const VideoPlayer = ({ videoAsset }) => {
   const player = useVideoPlayer(videoAsset.uri, (player) => {
@@ -18,7 +17,9 @@ const VideoPlayer = ({ videoAsset }) => {
 
 export default function UploadScreen() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const { user: loggedInUser } = useSelector((state) => state.auth);
+  const { isUploading, error } = useSelector((state) => state.upload);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -28,7 +29,12 @@ export default function UploadScreen() {
   const [videoAsset, setVideoAsset] = useState(null);
   const [previewStart, setPreviewStart] = useState('0');
   const [previewEnd, setPreviewEnd] = useState('10');
-  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', 'Failed to upload video.');
+    }
+  }, [error]);
 
   const handleFilePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -71,92 +77,25 @@ export default function UploadScreen() {
         return;
     }
 
-    setIsUploading(true);
-    const videoAsset = files.find(asset => asset.type === 'video');
-    const thumbnailAsset = files.find(asset => asset.type === 'image');
+    const videoFile = files.find(asset => asset.type === 'video');
+    const thumbnailFile = files.find(asset => asset.type === 'image');
 
-    if (!videoAsset) {
+    if (!videoFile) {
       Alert.alert('Error', 'Please select a video file to upload.');
       return;
     }
 
-    try {
-      const token = loggedInUser.token;
-      const api = axios.create({
-        baseURL: BASE_API_URL,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+    const videoMetadata = { title, description, credit, category };
+
+    dispatch(uploadFile({ videoFile, thumbnailFile, videoMetadata, previewStart, previewEnd }))
+      .unwrap()
+      .then(() => {
+        Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
+        navigation.goBack();
+      })
+      .catch(() => {
+        // Error is handled by the useEffect hook
       });
-
-      // 1. Get signature for video
-      const videoSigResponse = await api.post('/api/content/signature', { type: 'videos' });
-      const videoSigData = videoSigResponse.data;
-
-      // 2. Upload video to Cloudinary
-      const uploadToCloudinary = async (asset, sigData, resourceType) => {
-        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-        const formData = new FormData();
-        formData.append('file', {
-          uri: asset.uri,
-          name: asset.fileName,
-          type: asset.mimeType,
-        });
-        formData.append('api_key', sigData.api_key);
-        formData.append('timestamp', sigData.timestamp);
-        formData.append('signature', sigData.signature);
-
-        const response = await axios.post(cloudinaryUrl, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return response.data;
-      };
-
-      const videoUploadResponse = await uploadToCloudinary(videoAsset, videoSigData, 'video');
-
-      // 3. Handle thumbnail upload (if a thumbnail is provided)
-      let thumbnailUploadResponse = null;
-      if (thumbnailAsset) {
-        const thumbSigResponse = await api.post('/api/content/signature', { type: 'images' });
-        const thumbSigData = thumbSigResponse.data;
-        thumbnailUploadResponse = await uploadToCloudinary(thumbnailAsset, thumbSigData, 'image');
-      }
-
-      // 4. Construct the final payload
-      const finalPayload = {
-        title,
-        description,
-        credit,
-        category,
-        userId: loggedInUser._id,
-        previewStart,
-        previewEnd,
-        languageCode: 'en-US',
-        video: {
-          public_id: videoUploadResponse.public_id,
-          url: videoUploadResponse.secure_url,
-        },
-        ...(thumbnailUploadResponse && {
-          thumbnail: {
-            public_id: thumbnailUploadResponse.public_id,
-            url: thumbnailUploadResponse.secure_url,
-          },
-        }),
-      };
-
-      // 5. Post the final payload to your server
-      await api.post('/api/content', finalPayload);
-
-      Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-      navigation.goBack();
-
-    } catch (err) {
-      console.error('Error uploading video:', err.response?.data || err.message);
-      Alert.alert('Error', 'Failed to upload video.');
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   return (

@@ -3,11 +3,13 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './src/features/authSlice';
 import userReducer from './src/features/userSlice';
 import contentReducer from './src/features/contentSlice';
+import uploadReducer from './src/features/uploadSlice';
 
 export default configureStore({
   reducer: {
     auth: authReducer,
     user: userReducer, 
     content: contentReducer,
+    upload: uploadReducer,
   },
 });

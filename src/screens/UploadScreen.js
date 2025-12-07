@@ -75,27 +75,37 @@ export default function UploadScreen() {
   };
 
   const handleUpload = async () => {
-    if (!title.trim() || !description.trim()) {
-        Alert.alert('Error', 'Title and description are required.');
+    // --- Comprehensive Validation ---
+    if (!title.trim() || !description.trim() || !credit.trim() || !category.trim()) {
+        Alert.alert('Missing Information', 'Please fill out all fields: Title, Description, Credits, and Category.');
         return;
     }
     if (!files || files.length === 0) {
-        Alert.alert('Error', 'Please select at least one file to upload.');
-        return;
-    }
-
-    if (!loggedInUser || !loggedInUser.token) {
-        Alert.alert('Error', 'You must be logged in to upload a video.');
+        Alert.alert('No File Selected', 'Please select a video to upload.');
         return;
     }
 
     const videoFile = files.find(asset => asset.type === 'video');
-    const thumbnailFile = files.find(asset => asset.type === 'image');
-
     if (!videoFile) {
-      Alert.alert('Error', 'Please select a video file to upload.');
+      Alert.alert('No Video Selected', 'Please select a video file to upload.');
       return;
     }
+
+    const start = parseFloat(previewStart);
+    const end = parseFloat(previewEnd);
+    const duration = end - start;
+
+    if (isNaN(start) || isNaN(end) || duration < 10 || duration > 15) {
+        Alert.alert('Invalid Preview', 'The preview duration must be between 10 and 15 seconds.');
+        return;
+    }
+
+    if (!loggedInUser || !loggedInUser.token) {
+        Alert.alert('Authentication Error', 'You must be logged in to upload a video.');
+        return;
+    }
+
+    const thumbnailFile = files.find(asset => asset.type === 'image');
 
     const videoMetadata = { title, description, credit, category };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import CommentSection from '../components/CommentSection';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -8,9 +8,11 @@ import Watching from '../components/Watching';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faHeart, faUser, faList, faStar, faEye, faBell, faDollarSign, faLink, faPlay, faComment } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faEye, faBell, faDollarSign, faLink, faPlay, faComment } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { likeContent, unlikeContent, addToFavorites } from '../features/contentSlice';
+
+const isTV = Platform.isTV;
 
 const VideoScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -60,6 +62,70 @@ const VideoScreen = ({ route }) => {
     setCommentSectionOpen(true);
   };
 
+  if (isTV) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.tvVideoContainer}>
+          <VideoView style={styles.tvVideo} player={player} allowsFullscreen nativeControls />
+          <View style={styles.tvOverlay}>
+            <View style={styles.tvTopOverlay}>
+              <Text style={styles.tvTitle}>{title}</Text>
+              <View style={styles.tvTopIcons}>
+                <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+                  <Image source={playmood} style={styles.tvLogo} />
+                </TouchableOpacity>
+                {user && user._id && (
+                  <TouchableOpacity onPress={() => navigation.navigate('Dashboard')}>
+                    <Image source={profile} style={styles.tvProfileIcon} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+            <View style={styles.tvBottomOverlay}>
+              <View style={styles.tvBottomIcons}>
+                <View style={styles.flexIt}>
+                  <FontAwesomeIcon icon={faEye} style={styles.tvIcon} />
+                  <Text style={styles.tvInfobuttonText}>0</Text>
+                </View>
+                <TouchableOpacity style={styles.flexIt} onPress={() => handleLikePress(_id)}>
+                  <FontAwesomeIcon icon={faHeart} style={{color: (route.params.isLiked || isLiked.includes(_id)) ? 'red' : 'white'}} />
+                  <Text style={styles.tvInfobuttonText}>{route.params.likesCount || 0}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.flexIt} onPress={handleCommentIconClick}>
+                  <FontAwesomeIcon icon={faComment} style={styles.tvIcon} />
+                  <Text style={styles.tvInfobuttonText}>0</Text>
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <FontAwesomeIcon icon={faLink} style={styles.tvIcon} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.tvButtonHolder}>
+                <TouchableOpacity style={styles.tvSubButton} onPress={() => player.replay()}>
+                  <FontAwesomeIcon icon={faPlay} style={styles.tvIcon} />
+                  <Text style={styles.tvButtonText}>Play Again</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.tvSubButton} onPress={handleNextPress}>
+                  <Text style={styles.tvButtonText}>NEXT VIDEO</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <Recommended />
+          <Watching />
+        </ScrollView>
+        {isCommentSectionOpen && (
+          <CommentSection
+            contentId={_id}
+            isVisible={isCommentSectionOpen}
+            onClose={() => setCommentSectionOpen(false)}
+          />
+        )}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.videoHeader}>
@@ -67,13 +133,13 @@ const VideoScreen = ({ route }) => {
           <Text style={styles.redTitle}> {title} </Text>
         </View>
         <View style={styles.imageHolder}>
-          <Pressable onPress={() => navigation.navigate('Home')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')}>
             <Image source={playmood} style={styles.logo} />
-          </Pressable>
+          </TouchableOpacity>
           {user && user._id && (
-            <Pressable onPress={() => navigation.navigate('Dashboard')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Dashboard')}>
               <Image source={profile} style={styles.profileIcon} />
-            </Pressable>
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -92,49 +158,49 @@ const VideoScreen = ({ route }) => {
                   <FontAwesomeIcon icon={faEye} style={styles.icon} />
                   <Text style={styles.infobuttonText}>0</Text>
                 </View>
-                <Pressable style={styles.flexIt} onPress={() => handleLikePress(_id)}>
+                <TouchableOpacity style={styles.flexIt} onPress={() => handleLikePress(_id)}>
                   <FontAwesomeIcon icon={faHeart} style={{color: (route.params.isLiked || isLiked.includes(_id)) ? 'red' : 'white'}} />
                   <Text style={styles.infobuttonText}>{route.params.likesCount || 0}</Text>
-                </Pressable>
-                <Pressable style={styles.flexIt} onPress={handleCommentIconClick}>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.flexIt} onPress={handleCommentIconClick}>
                   <FontAwesomeIcon icon={faComment} style={styles.icon} />
                   <Text style={styles.infobuttonText}>0</Text>
-                </Pressable>
+                </TouchableOpacity>
                 <View>
                   <FontAwesomeIcon icon={faLink} style={styles.icon} />
                 </View>
               </View>
             </View>
             <View style={styles.buttonHolder}>
-              <Pressable style={styles.subButton} onPress={() => player.replay()}>
+              <TouchableOpacity style={styles.subButton} onPress={() => player.replay()}>
                 <FontAwesomeIcon icon={faPlay} style={styles.icon} />
                 <Text style={styles.buttonText}>Play Again</Text>
-              </Pressable>
-              <Pressable style={styles.subButton} onPress={handleNextPress}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.subButton} onPress={handleNextPress}>
                 <Text style={styles.buttonText}>NEXT VIDEO</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
             <View style={styles.buttonHolder}></View>
             <View style={styles.buttonHolder}>
-              <Pressable style={styles.subButton}>
+              <TouchableOpacity style={styles.subButton}>
                 <Text style={styles.buttonText}>By: {credits}</Text>
-              </Pressable>
-              <Pressable style={styles.subButton}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.subButton}>
                 <FontAwesomeIcon icon={faDollarSign} style={styles.icon} />
                 <Text style={styles.buttonText}>Donate</Text>
-              </Pressable>
-              <Pressable style={styles.subButton}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.subButton}>
                 <FontAwesomeIcon icon={faBell} style={styles.icon} />
                 <Text style={styles.buttonText}>Subscribe</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
           <View style={styles.titleContainer}>
             <View style={styles.navButton}>
               <Text style={styles.infobuttonText}>Information</Text>
-              <Pressable style={styles.switchButton} onPress={handleNextPress}>
+              <TouchableOpacity style={styles.switchButton} onPress={handleNextPress}>
                 <Text style={styles.nextbuttonText}>Production ~ Credits</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
             <View style={styles.infoNav}>
               <Text style={styles.credits}>{credits}</Text>
@@ -142,12 +208,12 @@ const VideoScreen = ({ route }) => {
             </View>
           </View>
         </View>
-        <Pressable onPress={handleTop10Press}>
+        <TouchableOpacity onPress={handleTop10Press}>
           <Recommended />
-        </Pressable>
-        <Pressable onPress={handleTop10Press}>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleTop10Press}>
           <Watching />
-        </Pressable>
+        </TouchableOpacity>
       </ScrollView>
       {isCommentSectionOpen && (
         <CommentSection
@@ -382,6 +448,76 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 20,
     backgroundColor: 'black',
+  },
+  tvVideoContainer: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+  },
+  tvVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  tvOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  tvTopOverlay: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tvTitle: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  tvTopIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tvLogo: {
+    width: 150,
+    height: 35,
+    marginRight: 20,
+  },
+  tvProfileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  tvBottomOverlay: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  tvBottomIcons: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  tvIcon: {
+    color: 'white',
+    fontSize: 24,
+  },
+  tvInfobuttonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  tvButtonHolder: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  tvSubButton: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    gap: 10,
+  },
+  tvButtonText: {
+    color: 'white',
+    fontSize: 18,
   },
 });
 

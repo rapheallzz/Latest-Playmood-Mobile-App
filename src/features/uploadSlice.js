@@ -74,6 +74,7 @@ export const uploadFile = createAsyncThunk(
       };
 
       // 5. Post the final payload to your server
+      console.log('Final Payload:', JSON.stringify(finalPayload, null, 2));
       const response = await api.post('/api/content', finalPayload);
       return response.data;
     } catch (err) {

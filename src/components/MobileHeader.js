@@ -146,7 +146,7 @@ export default function MobileHeader({ channels, set_channels }) {
           <Pressable style={styles.link}>
             <Text style={styles.linkText}>CHANNELS</Text>
           </Pressable>
-          <Pressable style={styles.link}>
+          <Pressable style={styles.link} onPress={() => navigation.navigate('Schedule')}>
             <Text style={styles.linkText}>SCHEDULE</Text>
           </Pressable>
           <Pressable style={styles.link}>
@@ -184,7 +184,7 @@ export default function MobileHeader({ channels, set_channels }) {
             <Pressable onPress={handleIconClick}>
               <Image source={location} style={styles.icon} />
             </Pressable>
-            <Pressable onPress={handleIconClick}>
+            <Pressable onPress={() => navigation.navigate('Schedule')}>
               <Image source={schedule_white} style={styles.icon} />
             </Pressable>
             <Pressable onPress={handleIconClick}>

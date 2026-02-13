@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rightsort.playmoodapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +37,8 @@
     "owner": "rightsort",
     "sdkVersion": "54.0.0",
     "plugins": [
-      "expo-video"
+      "expo-video",
+      "@react-native-tvos/config-tv"
     ]
   }
 }

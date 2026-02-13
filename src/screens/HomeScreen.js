@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Pressable, Text, Dimensions } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, Platform } from 'react-native';
 import MobileHeader from '../components/MobileHeader';
-import { useNavigation } from '@react-navigation/native'; 
+import { useNavigation } from '@react-navigation/native';
 import LikeCard from '../components/LikeCard';
 import NewOn from '../components/NewOn';
 import Channel from '../components/Channel';
@@ -19,16 +19,15 @@ import { useSelector } from 'react-redux';
 import Behind from '../components/Behind';
 import HighlightsHome from '../components/HighlightsHome';
 
-const { width } = Dimensions.get('window');
-const isTV = width >= 1024;
+const isTV = Platform.isTV;
 
 export default function HomeScreen() {
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
   const [likecard, setLikeCard] = useState([1]);
   const user = useSelector((state) => state.user);
 
   const handleTop10Press = () => {
-    navigation.navigate('ContentDetails'); 
+    navigation.navigate('ContentDetails');
   };
 
   useEffect(() => {
@@ -42,17 +41,18 @@ export default function HomeScreen() {
 
   return (
     <View style={tw`flex-1 bg-black`}>
-      <MobileHeader />
-      <ScrollView showsHorizontalScrollIndicator={false} style={tw`flex-1 ml-10`}>
+      {!isTV && <MobileHeader />}
+      <ScrollView showsHorizontalScrollIndicator={false} style={tw`flex-1 ${isTV ? 'ml-0' : 'ml-10'}`}>
+        {isTV && <View style={tw`h-16`} />}
         <LikeCard data={likecard} />
-        <View style={tw`flex mt-10`}> 
+        <View style={tw`flex mt-10`}>
           {[Top10Slider, HighlightsHome, NewOn, Channel, Diaries, Spaces, Recommended, Interview, Fashion, Social, Report, Behind, Teen].map((Component, index) => (
-            <Pressable 
-              key={index} 
-              onPress={handleTop10Press} 
-              style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}> 
-              <Component /> 
-            </Pressable>
+            <TouchableOpacity
+              key={index}
+              onPress={handleTop10Press}
+              style={tw`mr-4 ${isTV ? 'p-4' : 'p-2'}`}>
+              <Component />
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>

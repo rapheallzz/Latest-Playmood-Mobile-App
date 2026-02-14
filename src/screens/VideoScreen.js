@@ -8,7 +8,7 @@ import Watching from '../components/Watching';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faHeart, faEye, faBell, faDollarSign, faLink, faPlay, faComment, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faEye, faBell, faDollarSign, faLink, faPlay, faComment, faStar, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { likeContent, unlikeContent, addToFavorites, addToWatchlist } from '../features/contentSlice';
 import BrandedAlert from '../components/BrandedAlert';
@@ -95,7 +95,24 @@ const VideoScreen = ({ route }) => {
 
   const handleFavoritePress = () => {
     if (userToken) {
-      dispatch(addToFavorites(_id));
+      dispatch(addToFavorites(_id))
+        .unwrap()
+        .then(() => {
+            setAlertConfig({
+                visible: true,
+                title: 'Added to Favorites',
+                message: `${title} has been added to your favorites.`,
+                type: 'success'
+            });
+        })
+        .catch((error) => {
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: typeof error === 'string' ? error : (error.message || 'Failed to add to favorites.'),
+                type: 'error'
+            });
+        });
     } else {
         setAlertConfig({
             visible: true,
@@ -256,7 +273,7 @@ const VideoScreen = ({ route }) => {
                 <Text style={styles.buttonText}>Subscribe</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.subButton} onPress={handleWatchlistPress}>
-                <FontAwesomeIcon icon={faStar} style={styles.icon} />
+                <FontAwesomeIcon icon={faPlus} style={styles.icon} />
                 <Text style={styles.buttonText}>Watchlist</Text>
               </TouchableOpacity>
             </View>

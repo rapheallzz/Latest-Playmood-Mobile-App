@@ -174,7 +174,7 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
                   <Text style={styles.actionText}>{highlight.content.commentsCount || 0}</Text>
                 </Pressable>
                 <Pressable style={styles.actionButton} onPress={() => handleWatchlistClick(highlight._id, highlight.content.title)}>
-                  <FontAwesome name="star" size={24} color="white" />
+                  <FontAwesome name="plus" size={24} color="white" />
                   <Text style={styles.actionText}>Watchlist</Text>
                 </Pressable>
                 <Pressable style={styles.actionButton}>

@@ -3,18 +3,18 @@ import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-nat
 import Carousel from 'react-native-reanimated-carousel';
 import ContentCard from './ContentCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchLikedContent } from '../features/contentSlice';
+import { fetchFavorites } from '../features/contentSlice';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const FavoriteSlider = () => {
   const dispatch = useDispatch();
-  const { likes, isLoading, isError, message } = useSelector(state => state.content);
+  const { favorites, isLoading, isError, message } = useSelector(state => state.content);
   const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
-    dispatch(fetchLikedContent());
+    dispatch(fetchFavorites());
   }, [dispatch]);
 
   if (isLoading) {
@@ -30,7 +30,7 @@ const FavoriteSlider = () => {
         <Text style={styles.message}>Error: {message}</Text>
       ) : (
         <Carousel
-          data={likes}
+          data={favorites}
           renderItem={({ item }) => <ContentCard item={item} />}
           width={screenWidth}
           height={350}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faThumbsUp, faStar, faHeart } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsUp, faStar, faHeart, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { likeContent, unlikeContent, addToWatchlist } from '../features/contentSlice';
 import BrandedAlert from './BrandedAlert';
@@ -78,7 +78,7 @@ const ContentCard = ({ item }) => {
   };
 
   return (
-    <>
+    <View style={styles.container}>
       <BrandedAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
@@ -88,25 +88,29 @@ const ContentCard = ({ item }) => {
       />
       <Pressable onPress={handlePress} style={styles.card}>
         <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-        <Text style={styles.title}>{item.title}</Text>
-        {/* Like and favorite buttons remain the same */}
-        <View style={styles.actions}>
-          <Pressable style={styles.actionButton} onPress={handleLike}>
-            <FontAwesomeIcon icon={faHeart} style={[styles.icon, isLiked && styles.likedIcon]} />
-          </Pressable>
-          <Pressable style={styles.actionButton} onPress={handleWatchlist}>
-            <FontAwesomeIcon icon={faStar} style={styles.icon} />
-          </Pressable>
-        </View>
+        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
       </Pressable>
-    </>
+      <View style={styles.actions}>
+        <Pressable style={styles.actionButton} onPress={handleLike}>
+          <FontAwesomeIcon icon={faHeart} style={[styles.icon, isLiked && styles.likedIcon]} size={18} />
+        </Pressable>
+        <Pressable style={styles.actionButton} onPress={handleWatchlist}>
+          <FontAwesomeIcon icon={faPlus} style={styles.icon} size={18} />
+        </Pressable>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
+  container: {
     alignItems: 'center',
     marginHorizontal: 5,
+    width: 120,
+  },
+  card: {
+    alignItems: 'center',
+    width: '100%',
   },
   thumbnail: {
     width: 120,

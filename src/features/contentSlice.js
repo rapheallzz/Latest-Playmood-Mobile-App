@@ -10,12 +10,32 @@ export const fetchContent = createAsyncThunk('content/fetchContent', async (_, t
   }
 });
 
+export const fetchWatchlist = createAsyncThunk('content/fetchWatchlist', async (_, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchWatchlist(token);
+    return response.watchlist;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
+  }
+});
+
+export const fetchFavorites = createAsyncThunk('content/fetchFavorites', async (_, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchFavorites(token);
+    return response.favorites;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
+  }
+});
+
 export const addToFavorites = createAsyncThunk('content/addToFavorites', async (contentId, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.userToken;
     if (!token) return thunkAPI.rejectWithValue('User not authenticated');
     const response = await contentService.addToFavorites(contentId, token);
-    return response;
+    return { contentId, ...response };
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
@@ -183,6 +203,18 @@ const contentSlice = createSlice({
         state.isLoading = false;
         state.favorites.push(action.payload);
       })
+      .addCase(fetchFavorites.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchFavorites.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.favorites = action.payload;
+      })
+      .addCase(fetchFavorites.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
       .addCase(addToFavorites.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
@@ -194,6 +226,18 @@ const contentSlice = createSlice({
       .addCase(addToWatchlist.fulfilled, (state, action) => {
         state.isLoading = false;
         state.watchlist.push(action.payload);
+      })
+      .addCase(fetchWatchlist.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchWatchlist.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.watchlist = action.payload;
+      })
+      .addCase(fetchWatchlist.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       })
       .addCase(addToWatchlist.rejected, (state, action) => {
         state.isLoading = false;

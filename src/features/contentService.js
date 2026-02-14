@@ -95,6 +95,24 @@ const fetchLikedContent = async (token) => {
   return response;
 };
 
+const fetchWatchlist = async (token) => {
+  const response = await axios.get(`${API_URL}/content/watchlist`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+const fetchFavorites = async (token) => {
+  const response = await axios.get(`${API_URL}/favorites`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 const fetchFriends = async (token) => {
   const response = await axios.get(`${API_URL}/users/friends`, {
     headers: {
@@ -279,6 +297,8 @@ const contentService = {
   fetchContentComments,
   commentOnContent,
   fetchLikedContent,
+  fetchWatchlist,
+  fetchFavorites,
   fetchFriends,
   addVideoToPlaylist,
   updatePlaylist,

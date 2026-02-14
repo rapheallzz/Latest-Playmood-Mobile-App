@@ -27,9 +27,7 @@ export const uploadFile = createAsyncThunk(
       videoSignatureFormData.append('fileName', videoFile.fileName || 'video.mp4');
       videoSignatureFormData.append('contentType', videoFile.mimeType || 'video/mp4');
 
-      const videoSigResponse = await api.post('/api/content/signature', videoSignatureFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const videoSigResponse = await api.post('/api/content/signature', videoSignatureFormData);
       const { uploadUrl: videoUploadUrl, key: videoKey, publicUrl: videoPublicUrl } = videoSigResponse.data;
 
       // 2. Upload video to Cloudflare R2
@@ -50,9 +48,7 @@ export const uploadFile = createAsyncThunk(
         thumbSignatureFormData.append('fileName', thumbnailFile.fileName || 'thumbnail.jpg');
         thumbSignatureFormData.append('contentType', thumbnailFile.mimeType || 'image/jpeg');
 
-        const thumbSigResponse = await api.post('/api/content/signature', thumbSignatureFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const thumbSigResponse = await api.post('/api/content/signature', thumbSignatureFormData);
         const { uploadUrl: thumbUploadUrl, key: thumbKey, publicUrl: thumbPublicUrl } = thumbSigResponse.data;
 
         await uploadService.uploadToR2(

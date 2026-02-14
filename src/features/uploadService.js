@@ -1,7 +1,7 @@
-import * as FileSystem from 'expo-file-system';
+import { createUploadTask, FileSystemUploadType } from 'expo-file-system/legacy';
 
 const uploadToR2 = async (fileUri, uploadUrl, contentType, onProgress) => {
-  const uploadTask = FileSystem.createUploadTask(
+  const uploadTask = createUploadTask(
     uploadUrl,
     fileUri,
     {
@@ -9,7 +9,7 @@ const uploadToR2 = async (fileUri, uploadUrl, contentType, onProgress) => {
       headers: {
         'Content-Type': contentType,
       },
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
     },
     (progress) => {
       if (onProgress) {

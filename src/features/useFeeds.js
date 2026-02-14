@@ -46,9 +46,7 @@ const useFeeds = (user, creatorId = null) => {
         signatureFormData.append('fileName', file.fileName || (file.mimeType.startsWith('video') ? 'video.mp4' : 'image.jpg'));
         signatureFormData.append('contentType', file.mimeType);
 
-        const signatureResponse = await api.post('/api/content/signature', signatureFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const signatureResponse = await api.post('/api/content/signature', signatureFormData);
 
         const { uploadUrl, key, publicUrl } = signatureResponse.data;
 

@@ -8,15 +8,15 @@ import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 const CommunityPostCard = ({ post, user, onLike, onCommentSubmit, onDeletePost, onEditPost, onDeleteComment }) => {
     const [comment, setComment] = React.useState('');
     const isLiked = post.likes.includes(user?._id);
-    const isOwner = user?._id === post.user._id;
+    const isOwner = user?._id === post.user?._id;
 
     return (
         <View style={styles.card}>
             <View style={styles.header}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Image source={{ uri: post.user.profileImage }} style={styles.profileImage} />
+                    <Image source={{ uri: post.user?.profileImage }} style={styles.profileImage} />
                     <View>
-                        <Text style={styles.userName}>{post.user.name}</Text>
+                        <Text style={styles.userName}>{post.user?.name || 'Unknown User'}</Text>
                         <Text style={styles.timestamp}>{new Date(post.timestamp).toLocaleDateString()}</Text>
                     </View>
                 </View>
@@ -44,7 +44,7 @@ const CommunityPostCard = ({ post, user, onLike, onCommentSubmit, onDeletePost, 
             </View>
             <View style={styles.commentsSection}>
                 {post.comments.map((c) => {
-                    const canDeleteComment = user?._id === c.user._id || isOwner;
+                    const canDeleteComment = user?._id === c.user?._id || isOwner;
                     return (
                         <View key={c._id} style={styles.comment}>
                             <Text style={styles.commentText}>{c.content}</Text>

@@ -100,8 +100,8 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
             <View style={styles.overlay}>
               <View style={styles.bottomInfo}>
                 <View style={styles.creatorInfo}>
-                  <Image source={{ uri: highlight.creator.profileImage }} style={styles.avatar} />
-                  <Text style={styles.creatorName}>@{highlight.creator.name}</Text>
+                  <Image source={{ uri: highlight.creator?.profileImage }} style={styles.avatar} />
+                  <Text style={styles.creatorName}>@{highlight.creator?.name || 'Unknown'}</Text>
                 </View>
                 <Text style={styles.title}>{highlight.content.title}</Text>
               </View>

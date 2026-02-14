@@ -943,7 +943,13 @@ export default function CreatorChannel() {
 
             {showVerticalHighlightViewer && selectedHighlight && (
                 <VerticalHighlightViewer
-                    highlights={highlights}
+                    highlights={highlights.map(h => ({
+                        ...h,
+                        creator: h.creator || {
+                            name: creatorData?.name || 'Creator',
+                            profileImage: creatorData?.profileImage || ''
+                        }
+                    }))}
                     startIndex={selectedHighlight.index}
                     onClose={() => {
                         setShowVerticalHighlightViewer(false);

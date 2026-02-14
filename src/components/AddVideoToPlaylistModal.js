@@ -41,7 +41,7 @@ export default function AddVideoToPlaylistModal({
           >
             <Text style={styles.buttonText}>Close</Text>
           </Pressable>
-        </View>
+        </Pressable>
       </Pressable>
     </Modal>
   );

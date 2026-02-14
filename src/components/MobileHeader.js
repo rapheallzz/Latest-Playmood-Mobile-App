@@ -251,14 +251,14 @@ export default function MobileHeader({ channels, set_channels }) {
         visible={modalVisible}
         onRequestClose={handleCloseModal}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+        <Pressable style={styles.modalOverlay} onPress={handleCloseModal}>
+          <Pressable style={styles.modalContainer} onPress={() => {}}>
             <Text style={styles.modalText}>Coming soon on playmood App</Text>
             <Pressable style={styles.closeButton} onPress={handleCloseModal}>
               <Text style={styles.closeButtonText}>Close</Text>
             </Pressable>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );

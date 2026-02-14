@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import SliderHighlights from './SliderHighlights';
 import VerticalHighlightViewer from './VerticalHighlightViewer';
@@ -14,6 +14,7 @@ const HighlightsHome = () => {
   const [showVerticalHighlightViewer, setShowVerticalHighlightViewer] = useState(false);
   const [highlightStartIndex, setHighlightStartIndex] = useState(0);
   const [enrichedHighlights, setEnrichedHighlights] = useState([]);
+  const [isEnriching, setIsEnriching] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +53,7 @@ const HighlightsHome = () => {
       setViewedHighlights((prev) => new Set(prev).add(highlight._id));
     }
 
+    setIsEnriching(true);
     const enrichedData = await Promise.all(
       highlights.map(async (h) => {
         try {
@@ -83,6 +85,7 @@ const HighlightsHome = () => {
     );
 
     setEnrichedHighlights(enrichedData);
+    setIsEnriching(false);
     setShowVerticalHighlightViewer(true);
   };
 
@@ -92,6 +95,13 @@ const HighlightsHome = () => {
 
   return (
     <View>
+      <Text style={styles.headerTitle}>Highlights</Text>
+      {isEnriching && (
+        <View style={styles.enrichingLoader}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Preparing video...</Text>
+        </View>
+      )}
       <SliderHighlights
         highlights={highlights}
         handleSelectHighlight={handleSelectHighlight}
@@ -113,9 +123,27 @@ const HighlightsHome = () => {
 };
 
 const styles = StyleSheet.create({
+    headerTitle: {
+        color: 'white',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginLeft: 10,
+        marginBottom: 10,
+    },
     loadingText: {
         color: 'white',
         textAlign: 'center',
+    },
+    enrichingLoader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        zIndex: 10,
     },
 });
 

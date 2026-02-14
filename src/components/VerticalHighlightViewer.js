@@ -45,12 +45,12 @@ const HighlightPlayer = ({ highlight, isActive }) => {
   }, [player, highlight]);
 
   return (
-    <>
-      {status === 'loading' && (
+    <View style={styles.playerContainer}>
+      {(status === 'loading' || status === 'buffering') && (
         <ActivityIndicator style={styles.loadingIndicator} size="large" color="#ffffff" />
       )}
       <VideoView player={player} style={styles.video} />
-    </>
+    </View>
   );
 };
 
@@ -141,6 +141,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
       },
+    playerContainer: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
       video: {
         width: '100%',
         height: '100%',

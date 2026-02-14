@@ -5,7 +5,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useNavigation } from '@react-navigation/native';
 import MobileHeader from '../components/MobileHeader';
-import { uploadFile } from '../features/uploadSlice';
+import { uploadFile, resetUpload } from '../features/uploadSlice';
+import BrandedAlert from '../components/BrandedAlert';
 
 const VideoPlayer = ({ videoAsset }) => {
   const player = useVideoPlayer(videoAsset.uri, (player) => {
@@ -29,6 +30,7 @@ export default function UploadScreen() {
   const [videoAsset, setVideoAsset] = useState(null);
   const [previewStart, setPreviewStart] = useState('0');
   const [previewEnd, setPreviewEnd] = useState('10');
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success', onConfirm: () => {} });
 
   useEffect(() => {
     if (error) {
@@ -44,14 +46,29 @@ export default function UploadScreen() {
         displayMessage = error.message || error.error || JSON.stringify(error);
       }
 
-      Alert.alert('Upload Failed', displayMessage);
+      setAlertConfig({
+        visible: true,
+        title: 'Upload Failed',
+        message: displayMessage,
+        type: 'error',
+        onConfirm: () => {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+            dispatch(resetUpload());
+        }
+      });
     }
-  }, [error]);
+  }, [error, dispatch]);
 
   const handleFilePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      setAlertConfig({
+        visible: true,
+        title: 'Permission Denied',
+        message: 'Sorry, we need camera roll permissions to make this work!',
+        type: 'error',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
       return;
     }
 
@@ -77,17 +94,35 @@ export default function UploadScreen() {
   const handleUpload = async () => {
     // --- Comprehensive Validation ---
     if (!title.trim() || !description.trim() || !credit.trim() || !category.trim()) {
-        Alert.alert('Missing Information', 'Please fill out all fields: Title, Description, Credits, and Category.');
+        setAlertConfig({
+            visible: true,
+            title: 'Missing Information',
+            message: 'Please fill out all fields: Title, Description, Credits, and Category.',
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+        });
         return;
     }
     if (!files || files.length === 0) {
-        Alert.alert('No File Selected', 'Please select a video to upload.');
+        setAlertConfig({
+            visible: true,
+            title: 'No File Selected',
+            message: 'Please select a video to upload.',
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+        });
         return;
     }
 
     const videoFile = files.find(asset => asset.type === 'video');
     if (!videoFile) {
-      Alert.alert('No Video Selected', 'Please select a video file to upload.');
+        setAlertConfig({
+            visible: true,
+            title: 'No Video Selected',
+            message: 'Please select a video file to upload.',
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+        });
       return;
     }
 
@@ -96,12 +131,24 @@ export default function UploadScreen() {
     const duration = end - start;
 
     if (isNaN(start) || isNaN(end) || duration < 10 || duration > 15) {
-        Alert.alert('Invalid Preview', 'The preview duration must be between 10 and 15 seconds.');
+        setAlertConfig({
+            visible: true,
+            title: 'Invalid Preview',
+            message: 'The preview duration must be between 10 and 15 seconds.',
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+        });
         return;
     }
 
     if (!loggedInUser || !loggedInUser.token) {
-        Alert.alert('Authentication Error', 'You must be logged in to upload a video.');
+        setAlertConfig({
+            visible: true,
+            title: 'Authentication Error',
+            message: 'You must be logged in to upload a video.',
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+        });
         return;
     }
 
@@ -112,8 +159,16 @@ export default function UploadScreen() {
     dispatch(uploadFile({ videoFile, thumbnailFile, videoMetadata, previewStart, previewEnd }))
       .unwrap()
       .then(() => {
-        Alert.alert('Success', 'Video uploaded successfully! It will be reviewed by our team.');
-        navigation.goBack();
+        setAlertConfig({
+            visible: true,
+            title: 'Success',
+            message: 'Video uploaded successfully! It will be reviewed by our team.',
+            type: 'success',
+            onConfirm: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                navigation.goBack();
+            }
+        });
       })
       .catch(() => {
         // Error is handled by the useEffect hook
@@ -122,6 +177,13 @@ export default function UploadScreen() {
 
   return (
     <View style={styles.container}>
+        <BrandedAlert
+            visible={alertConfig.visible}
+            title={alertConfig.title}
+            message={alertConfig.message}
+            type={alertConfig.type}
+            onConfirm={alertConfig.onConfirm}
+        />
         <MobileHeader />
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
             <Text style={styles.title}>Upload Video</Text>

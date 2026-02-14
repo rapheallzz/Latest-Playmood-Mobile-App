@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
+import { Modal, View, Text, TextInput, StyleSheet, Pressable, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import BrandedAlert from './BrandedAlert';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 const VideoPlayer = ({ videoAsset }) => {
@@ -20,11 +21,18 @@ export default function UploadVideoModal({ isOpen, onClose, handleUpload }) {
   const [videoAsset, setVideoAsset] = useState(null);
   const [previewStart, setPreviewStart] = useState('0');
   const [previewEnd, setPreviewEnd] = useState('10');
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success', onConfirm: () => {} });
 
   const handleFilePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      setAlertConfig({
+        visible: true,
+        title: 'Permission Denied',
+        message: 'Sorry, we need camera roll permissions to make this work!',
+        type: 'error',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
       return;
     }
 
@@ -55,6 +63,13 @@ export default function UploadVideoModal({ isOpen, onClose, handleUpload }) {
       visible={isOpen}
       onRequestClose={onClose}
     >
+      <BrandedAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onConfirm={alertConfig.onConfirm}
+      />
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <ScrollView style={{width: '100%'}} contentContainerStyle={{alignItems: 'center'}}>

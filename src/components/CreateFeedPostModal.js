@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, StyleSheet, Pressable, TextInput, Alert, ScrollView, Image } from 'react-native';
+import { View, Text, Modal, StyleSheet, Pressable, TextInput, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import BrandedAlert from './BrandedAlert';
 
 const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
   const [caption, setCaption] = useState('');
   const [media, setMedia] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success', onConfirm: () => {} });
 
   const resetStateAndClose = () => {
     setCaption('');
@@ -27,7 +29,13 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
 
   const handleSubmit = async () => {
     if (!caption || media.length === 0) {
-      Alert.alert('Error', 'Please provide a caption and at least one image.');
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: 'Please provide a caption and at least one image.',
+        type: 'error',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
       return;
     }
 
@@ -35,17 +43,37 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
     try {
       await onCreateFeedPost(caption, media);
       setIsUploading(false);
-      Alert.alert('Success!', 'Your post has been successfully published.', [
-        { text: 'OK', onPress: resetStateAndClose },
-      ]);
+      setAlertConfig({
+        visible: true,
+        title: 'Success!',
+        message: 'Your post has been successfully published.',
+        type: 'success',
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, visible: false }));
+          resetStateAndClose();
+        }
+      });
     } catch (error) {
       setIsUploading(false);
-      Alert.alert('Error', error.message || 'Failed to create feed post.');
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: error.message || 'Failed to create feed post.',
+        type: 'error',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
     }
   };
 
   return (
     <Modal visible={isOpen} animationType="slide" transparent onRequestClose={resetStateAndClose}>
+      <BrandedAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onConfirm={alertConfig.onConfirm}
+      />
       <Pressable style={styles.modalContainer} onPress={resetStateAndClose}>
         <Pressable style={styles.modalContent} onPress={() => {}}>
           <Text style={styles.modalTitle}>Create Feed Post</Text>

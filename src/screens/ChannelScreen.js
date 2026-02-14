@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, FlatList, Linking, Modal } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ScrollView, ActivityIndicator, FlatList, Linking, Modal } from 'react-native';
 import ContentCard from '../components/ContentCard';
+import BrandedAlert from '../components/BrandedAlert';
 import CommunityPostCard from '../components/CommunityPostCard';
 import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -94,12 +95,19 @@ export default function CreatorChannel() {
 
     // State for "More" menu
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success', onConfirm: () => {} });
 
 
     const fetchPlaylists = async () => {
         if (!creatorId) {
             setError('Creator ID is missing.');
-            Alert.alert('Error', 'Creator ID is missing.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Creator ID is missing.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -113,7 +121,13 @@ export default function CreatorChannel() {
         } catch (err) {
             console.error('Error fetching playlists:', err.response?.data || err.message);
             setError(err.response?.data?.message || 'Failed to load playlists.');
-            Alert.alert('Error', 'Failed to load playlists.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to load playlists.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             setPlaylists([]);
         } finally {
             setIsLoadingPlaylists(false);
@@ -123,14 +137,26 @@ export default function CreatorChannel() {
     const fetchCommunityPosts = async () => {
         if (!creatorId) {
             setError('Creator ID is missing.');
-            Alert.alert('Error', 'Creator ID is missing.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Creator ID is missing.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData) {
-            Alert.alert('Error', 'Please log in to view community posts.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Please log in to view community posts.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -156,7 +182,13 @@ export default function CreatorChannel() {
               setError(
                 err.response?.data?.message || 'Failed to load community posts due to a server error.'
               );
-              Alert.alert('Error', 'Failed to load community posts due to a server error.');
+              setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to load community posts due to a server error.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+              });
               setCommunityPosts([]);
             }
         } finally {
@@ -168,7 +200,13 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to update your channel.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'You must be logged in to update your channel.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
         const token = userData.token;
@@ -191,24 +229,48 @@ export default function CreatorChannel() {
 
             setBannerImageFile(null); // Reset the file state
             setShowEditModal(false);
-            Alert.alert('Success', 'Channel information updated successfully!');
+            setAlertConfig({
+                visible: true,
+                title: 'Success',
+                message: 'Channel information updated successfully!',
+                type: 'success',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
 
         } catch (err) {
             console.error('Error updating channel info:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to update channel information.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to update channel information.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) {
-            Alert.alert('Error', 'Post content cannot be empty.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Post content cannot be empty.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to post.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'You must be logged in to post.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -226,11 +288,23 @@ export default function CreatorChannel() {
             setCommunityPosts(prev => [response.data, ...prev]);
             setNewPostContent('');
             setShowCommunityModal(false);
-            Alert.alert('Success', 'Community post created successfully!');
+            setAlertConfig({
+                visible: true,
+                title: 'Success',
+                message: 'Community post created successfully!',
+                type: 'success',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
 
         } catch (err) {
             console.error('Error creating community post:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to create community post.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to create community post.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -245,7 +319,13 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to update a post.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'You must be logged in to update a post.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -259,10 +339,22 @@ export default function CreatorChannel() {
             setCommunityPosts(communityPosts.map(p => p._id === editingPost._id ? updatedPost : p));
             setShowEditPostModal(false);
             setEditingPost(null);
-            Alert.alert('Success', 'Post updated successfully!');
+            setAlertConfig({
+                visible: true,
+                title: 'Success',
+                message: 'Post updated successfully!',
+                type: 'success',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         } catch (err) {
             console.error('Error updating post:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to update post.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to update post.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -279,7 +371,13 @@ export default function CreatorChannel() {
                         const userString = await AsyncStorage.getItem('user');
                         const userData = userString ? JSON.parse(userString) : null;
                         if (!userData || !userData.token) {
-                            Alert.alert('Error', 'You must be logged in to delete a post.');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Error',
+                                message: 'You must be logged in to delete a post.',
+                                type: 'error',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                             return;
                         }
 
@@ -287,10 +385,22 @@ export default function CreatorChannel() {
                             const token = userData.token;
                             await contentService.deleteCommunityPost(postId, token);
                             setCommunityPosts(communityPosts.filter(p => p._id !== postId));
-                            Alert.alert('Success', 'Post deleted successfully!');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Success',
+                                message: 'Post deleted successfully!',
+                                type: 'success',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                         } catch (err) {
                             console.error('Error deleting post:', err.response?.data || err.message);
-                            Alert.alert('Error', 'Failed to delete post.');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Error',
+                                message: 'Failed to delete post.',
+                                type: 'error',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                         }
                     },
                 },
@@ -311,7 +421,13 @@ export default function CreatorChannel() {
                         const userString = await AsyncStorage.getItem('user');
                         const userData = userString ? JSON.parse(userString) : null;
                         if (!userData || !userData.token) {
-                            Alert.alert('Error', 'You must be logged in to delete a comment.');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Error',
+                                message: 'You must be logged in to delete a comment.',
+                                type: 'error',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                             return;
                         }
 
@@ -327,10 +443,22 @@ export default function CreatorChannel() {
                                 }
                                 return post;
                             }));
-                            Alert.alert('Success', 'Comment deleted successfully!');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Success',
+                                message: 'Comment deleted successfully!',
+                                type: 'success',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                         } catch (err) {
                             console.error('Error deleting comment:', err.response?.data || err.message);
-                            Alert.alert('Error', 'Failed to delete comment.');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Error',
+                                message: 'Failed to delete comment.',
+                                type: 'error',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                         }
                     },
                 },
@@ -340,14 +468,26 @@ export default function CreatorChannel() {
 
     const handleCreatePlaylist = async () => {
         if (!newPlaylist.name.trim()) {
-            Alert.alert('Error', 'Playlist name cannot be empty.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Playlist name cannot be empty.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to create a playlist.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'You must be logged in to create a playlist.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -364,11 +504,23 @@ export default function CreatorChannel() {
             setPlaylists(prev => [response.data.playlist, ...prev]);
             setNewPlaylist({ name: '', description: '', visibility: 'public' });
             setShowPlaylistModal(false);
-            Alert.alert('Success', 'Playlist created successfully!');
+            setAlertConfig({
+                visible: true,
+                title: 'Success',
+                message: 'Playlist created successfully!',
+                type: 'success',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
 
         } catch (err) {
             console.error('Error creating playlist:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to create playlist.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to create playlist.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -383,7 +535,13 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to update a playlist.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'You must be logged in to update a playlist.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -397,10 +555,22 @@ export default function CreatorChannel() {
             setPlaylists(playlists.map(p => p._id === editingPlaylist._id ? response.playlist : p));
             setShowEditPlaylistModal(false);
             setEditingPlaylist(null);
-            Alert.alert('Success', 'Playlist updated successfully!');
+            setAlertConfig({
+                visible: true,
+                title: 'Success',
+                message: 'Playlist updated successfully!',
+                type: 'success',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         } catch (err) {
             console.error('Error updating playlist:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to update playlist.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to update playlist.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -417,7 +587,13 @@ export default function CreatorChannel() {
                         const userString = await AsyncStorage.getItem('user');
                         const userData = userString ? JSON.parse(userString) : null;
                         if (!userData || !userData.token) {
-                            Alert.alert('Error', 'You must be logged in to delete a playlist.');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Error',
+                                message: 'You must be logged in to delete a playlist.',
+                                type: 'error',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                             return;
                         }
 
@@ -425,10 +601,22 @@ export default function CreatorChannel() {
                             const token = userData.token;
                             await contentService.deletePlaylist(playlistId, token);
                             setPlaylists(playlists.filter(p => p._id !== playlistId));
-                            Alert.alert('Success', 'Playlist deleted successfully!');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Success',
+                                message: 'Playlist deleted successfully!',
+                                type: 'success',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                         } catch (err) {
                             console.error('Error deleting playlist:', err.response?.data || err.message);
-                            Alert.alert('Error', 'Failed to delete playlist.');
+                            setAlertConfig({
+                                visible: true,
+                                title: 'Error',
+                                message: 'Failed to delete playlist.',
+                                type: 'error',
+                                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                            });
                         }
                     },
                 },
@@ -447,7 +635,13 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData || !userData.token) {
-            Alert.alert('Error', 'You must be logged in to add a video to a playlist.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'You must be logged in to add a video to a playlist.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
 
@@ -456,10 +650,22 @@ export default function CreatorChannel() {
             const response = await contentService.addVideoToPlaylist(selectedPlaylist._id, contentId, token);
             setPlaylists(playlists.map(p => p._id === selectedPlaylist._id ? response.playlist : p));
             setShowAddVideoModal(false);
-            Alert.alert('Success', 'Video added to playlist successfully!');
+            setAlertConfig({
+                visible: true,
+                title: 'Success',
+                message: 'Video added to playlist successfully!',
+                type: 'success',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         } catch (err) {
             console.error('Error adding video to playlist:', err.response?.data || err.message);
-            Alert.alert('Error', 'Failed to add video to playlist.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to add video to playlist.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -491,7 +697,13 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData) {
-            Alert.alert('Error', 'Please log in to like posts.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Please log in to like posts.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
         try {
@@ -518,7 +730,13 @@ export default function CreatorChannel() {
             );
         } catch (err) {
             console.error('Error liking/unliking post:', err);
-            Alert.alert('Error', 'Failed to update like status.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to update like status.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -526,11 +744,23 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData) {
-            Alert.alert('Error', 'Please log in to comment.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Please log in to comment.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
         if (!comment.trim()) {
-            Alert.alert('Error', 'Comment cannot be empty.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Comment cannot be empty.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
             return;
         }
         try {
@@ -560,7 +790,13 @@ export default function CreatorChannel() {
             );
         } catch (err) {
             console.error('Error adding comment:', err);
-            Alert.alert('Error', 'Failed to add comment.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to add comment.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            });
         }
     };
 
@@ -667,7 +903,13 @@ export default function CreatorChannel() {
         const userString = await AsyncStorage.getItem('user');
         const userData = userString ? JSON.parse(userString) : null;
         if (!userData) {
-          Alert.alert('Error', 'Please log in to subscribe.');
+          setAlertConfig({
+            visible: true,
+            title: 'Error',
+            message: 'Please log in to subscribe.',
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+          });
           return;
         }
 
@@ -679,7 +921,13 @@ export default function CreatorChannel() {
         try {
           const token = userData.token;
           if (!token) {
-            Alert.alert('Error', 'Authentication token missing.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Authentication token missing.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+              });
             return;
           }
           if (subscribed) {
@@ -715,11 +963,13 @@ export default function CreatorChannel() {
           }
         } catch (err) {
           console.error('Subscription error:', err.response?.data || err.message);
-          Alert.alert(
-            'Error',
-            err.response?.data?.message ||
-              (subscribed ? 'Failed to unsubscribe.' : 'Failed to subscribe.')
-          );
+          setAlertConfig({
+            visible: true,
+            title: 'Error',
+            message: err.response?.data?.message || (subscribed ? 'Failed to unsubscribe.' : 'Failed to subscribe.'),
+            type: 'error',
+            onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+          });
         }
     };
   
@@ -727,7 +977,13 @@ export default function CreatorChannel() {
         const fetchCreatorData = async () => {
           if (!creatorId) {
             setError('Creator ID is missing.');
-            Alert.alert('Error', 'Creator ID is missing.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Creator ID is missing.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+              });
             setIsLoading(false);
             return;
           }
@@ -767,7 +1023,13 @@ export default function CreatorChannel() {
           } catch (error) {
             console.error('Error fetching creator data:', error);
             setError('Failed to load creator data.');
-            Alert.alert('Error', 'Failed to load creator data.');
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to load creator data.',
+                type: 'error',
+                onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+              });
           } finally {
             setIsLoading(false);
           }
@@ -901,6 +1163,13 @@ export default function CreatorChannel() {
 
     return (
         <View style={styles.container}>
+            <BrandedAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={alertConfig.onConfirm}
+            />
             {activeTab === 'VIDEOS' || activeTab === 'ABOUT' ? (
                 <ScrollView>
                     {renderHeader()}

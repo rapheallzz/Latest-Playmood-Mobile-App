@@ -8,14 +8,30 @@ const fetchContent = async () => {
   return response;
 };
 
-const addToFavorites = async (contentId, userId) => {
-  const response = await axios.post(`${API_URL}/favorites`, { contentId, userId });
-  return response;
+const addToFavorites = async (contentId, token) => {
+  const response = await axios.post(
+    `${API_URL}/favorites`,
+    { contentId },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
 };
 
-const addToWatchlist = async (contentId) => {
-  const response = await axios.post(`${API_URL}/watchlist`, { contentId });
-  return response;
+const addToWatchlist = async (contentId, token) => {
+  const response = await axios.post(
+    `${API_URL}/content/watchlist/add`,
+    { contentId },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
 };
 
 const likeContent = async (contentId, token) => {
@@ -254,7 +270,7 @@ const likeFeedPost = async ({ feedId, token }) => {
 };
 
 
-export default {
+const contentService = {
   fetchContent,
   addToFavorites,
   addToWatchlist,
@@ -275,5 +291,7 @@ export default {
   likeFeedPost,
   unlikeFeedPost,
   commentOnFeedPost,
-    fetchTopTenContent,
+  fetchTopTenContent,
 };
+
+export default contentService;

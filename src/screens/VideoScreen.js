@@ -8,9 +8,10 @@ import Watching from '../components/Watching';
 import playmood from '../../assets/PLAYMOOD_DEF.png';
 import profile from '../../assets/icon-profile.png';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faHeart, faEye, faBell, faDollarSign, faLink, faPlay, faComment } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faEye, faBell, faDollarSign, faLink, faPlay, faComment, faStar } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { likeContent, unlikeContent, addToFavorites } from '../features/contentSlice';
+import { likeContent, unlikeContent, addToFavorites, addToWatchlist } from '../features/contentSlice';
+import BrandedAlert from '../components/BrandedAlert';
 
 const isTV = Platform.isTV;
 
@@ -18,7 +19,7 @@ const VideoScreen = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { title, credits, desc, movie, _id } = route.params;
-  const user = useSelector((state) => state.user);
+  const { user, userToken } = useSelector((state) => state.auth);
   const userId = user ? user._id : null;
 
   const player = useVideoPlayer(movie, (player) => {
@@ -33,6 +34,7 @@ const VideoScreen = ({ route }) => {
   const { likes } = useSelector((state) => state.content);
   const [isLiked, setIsLiked] = useState([]);
   const [isCommentSectionOpen, setCommentSectionOpen] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success' });
 
   useEffect(() => {
     setIsLiked(likes.map((like) => like.contentId));
@@ -43,6 +45,16 @@ const VideoScreen = ({ route }) => {
   };
 
   const handleLikePress = (contentId) => {
+    if (!userToken) {
+        setAlertConfig({
+            visible: true,
+            title: 'Authentication Required',
+            message: 'Please log in to like content.',
+            type: 'error'
+        });
+        return;
+    }
+
     if (isLiked.includes(contentId)) {
       dispatch(unlikeContent(contentId));
     } else {
@@ -50,11 +62,47 @@ const VideoScreen = ({ route }) => {
     }
   };
 
+  const handleWatchlistPress = () => {
+    if (!userToken) {
+        setAlertConfig({
+            visible: true,
+            title: 'Authentication Required',
+            message: 'Please log in to add content to your watchlist.',
+            type: 'error'
+        });
+        return;
+    }
+
+    dispatch(addToWatchlist(_id))
+        .unwrap()
+        .then(() => {
+            setAlertConfig({
+                visible: true,
+                title: 'Added to Watchlist',
+                message: `${title} has been added to your watchlist.`,
+                type: 'success'
+            });
+        })
+        .catch((error) => {
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: typeof error === 'string' ? error : (error.message || 'Failed to add to watchlist.'),
+                type: 'error'
+            });
+        });
+  };
+
   const handleFavoritePress = () => {
-    if (userId) {
-      dispatch(addToFavorites({ contentId: _id, userId }));
+    if (userToken) {
+      dispatch(addToFavorites(_id));
     } else {
-      console.log('User not logged in');
+        setAlertConfig({
+            visible: true,
+            title: 'Authentication Required',
+            message: 'Please log in to favorite content.',
+            type: 'error'
+        });
     }
   };
 
@@ -65,6 +113,13 @@ const VideoScreen = ({ route }) => {
   if (isTV) {
     return (
       <View style={styles.container}>
+        <BrandedAlert
+            visible={alertConfig.visible}
+            title={alertConfig.title}
+            message={alertConfig.message}
+            type={alertConfig.type}
+            onConfirm={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+        />
         <View style={styles.tvVideoContainer}>
           <VideoView style={styles.tvVideo} player={player} allowsFullscreen nativeControls />
           <View style={styles.tvOverlay}>
@@ -128,6 +183,13 @@ const VideoScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
+        <BrandedAlert
+            visible={alertConfig.visible}
+            title={alertConfig.title}
+            message={alertConfig.message}
+            type={alertConfig.type}
+            onConfirm={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+        />
       <View style={styles.videoHeader}>
         <View style={styles.titleHolder}>
           <Text style={styles.redTitle}> {title} </Text>
@@ -192,6 +254,10 @@ const VideoScreen = ({ route }) => {
               <TouchableOpacity style={styles.subButton}>
                 <FontAwesomeIcon icon={faBell} style={styles.icon} />
                 <Text style={styles.buttonText}>Subscribe</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.subButton} onPress={handleWatchlistPress}>
+                <FontAwesomeIcon icon={faStar} style={styles.icon} />
+                <Text style={styles.buttonText}>Watchlist</Text>
               </TouchableOpacity>
             </View>
           </View>

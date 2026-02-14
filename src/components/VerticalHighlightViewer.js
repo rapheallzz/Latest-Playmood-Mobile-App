@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import { likeContent, unlikeContent } from '../features/contentSlice';
+import { likeContent, unlikeContent, addToWatchlist } from '../features/contentSlice';
+import BrandedAlert from './BrandedAlert';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
 import Swiper from 'react-native-swiper';
@@ -58,9 +59,11 @@ const HighlightPlayer = ({ highlight, isActive }) => {
 const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const { userToken } = useSelector((state) => state.auth);
   const { likes } = useSelector((state) => state.content);
   const [isLiked, setIsLiked] = useState([]);
   const [isCommentSectionOpen, setCommentSectionOpen] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success' });
   const [activeIndex, setActiveIndex] = useState(startIndex);
   const [activeHighlight, setActiveHighlight] = useState(highlights[startIndex]);
 
@@ -73,11 +76,52 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
   }, [likes]);
 
   const handleLikeClick = (contentId) => {
+    if (!userToken) {
+      setAlertConfig({
+        visible: true,
+        title: 'Authentication Required',
+        message: 'Please log in to like content.',
+        type: 'error'
+      });
+      return;
+    }
+
     if (isLiked.includes(contentId)) {
       dispatch(unlikeContent(contentId));
     } else {
       dispatch(likeContent(contentId));
     }
+  };
+
+  const handleWatchlistClick = (contentId, title) => {
+    if (!userToken) {
+      setAlertConfig({
+        visible: true,
+        title: 'Authentication Required',
+        message: 'Please log in to add content to your watchlist.',
+        type: 'error'
+      });
+      return;
+    }
+
+    dispatch(addToWatchlist(contentId))
+      .unwrap()
+      .then(() => {
+        setAlertConfig({
+          visible: true,
+          title: 'Added to Watchlist',
+          message: `${title} has been added to your watchlist.`,
+          type: 'success'
+        });
+      })
+      .catch((error) => {
+        setAlertConfig({
+          visible: true,
+          title: 'Error',
+          message: typeof error === 'string' ? error : (error.message || 'Failed to add to watchlist.'),
+          type: 'error'
+        });
+      });
   };
 
   const handleCommentIconClick = () => {
@@ -86,6 +130,13 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
 
   return (
     <Modal visible={true} transparent={false} animationType="slide">
+      <BrandedAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onConfirm={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+      />
       <Swiper
         loop={false}
         showsPagination={false}
@@ -121,6 +172,10 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
                 <Pressable style={styles.actionButton} onPress={handleCommentIconClick}>
                   <FontAwesome name="comment" size={24} color="white" />
                   <Text style={styles.actionText}>{highlight.content.commentsCount || 0}</Text>
+                </Pressable>
+                <Pressable style={styles.actionButton} onPress={() => handleWatchlistClick(highlight._id, highlight.content.title)}>
+                  <FontAwesome name="star" size={24} color="white" />
+                  <Text style={styles.actionText}>Watchlist</Text>
                 </Pressable>
                 <Pressable style={styles.actionButton}>
                   <FontAwesome name="paper-plane" size={24} color="white" />

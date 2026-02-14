@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Text, Image, Pressable, Alert, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Image, Pressable, Linking } from 'react-native';
 import MobileHeader from '../components/MobileHeader';
+import BrandedAlert from '../components/BrandedAlert';
 import LikeSlider from '../components/LikeSlider';
 import ForYouSlider from '../components/ForYouSlider';
 import FriendSlider from '../components/FriendSlider';
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'success', onConfirm: () => {} });
 
   const [name, setName] = useState(user?.name);
   const [email, setEmail] = useState(user?.email);
@@ -43,7 +45,13 @@ export default function Dashboard() {
 
   const handleUpdateProfile = async () => {
     if (!user) {
-      Alert.alert('Error', 'You must be logged in to update your profile.');
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: 'You must be logged in to update your profile.',
+        type: 'error',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
       return;
     }
 
@@ -69,10 +77,22 @@ export default function Dashboard() {
       });
       dispatch(setUser({ ...user, ...response.data }));
       setIsModalOpen(false);
-      Alert.alert('Success', 'Profile updated successfully.');
+      setAlertConfig({
+        visible: true,
+        title: 'Success',
+        message: 'Profile updated successfully.',
+        type: 'success',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to update profile.');
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: 'Failed to update profile.',
+        type: 'error',
+        onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+      });
     }
   };
 
@@ -95,6 +115,13 @@ export default function Dashboard() {
 
   return (
     <View style={tw`flex-1 bg-black`}>
+        <BrandedAlert
+            visible={alertConfig.visible}
+            title={alertConfig.title}
+            message={alertConfig.message}
+            type={alertConfig.type}
+            onConfirm={alertConfig.onConfirm}
+        />
       <MobileHeader />
       <ScrollView showsHorizontalScrollIndicator={false} style={styles.content}>
         <View style={styles.profileContainer}>

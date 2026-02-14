@@ -6,36 +6,53 @@ export const fetchContent = createAsyncThunk('content/fetchContent', async (_, t
     const response = await contentService.fetchContent();
     return response.data;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
 export const addToFavorites = createAsyncThunk('content/addToFavorites', async (contentId, thunkAPI) => {
   try {
-    const response = await contentService.addToFavorites(contentId);
-    return response.data;
+    const token = thunkAPI.getState().auth.userToken;
+    if (!token) return thunkAPI.rejectWithValue('User not authenticated');
+    const response = await contentService.addToFavorites(contentId, token);
+    return response;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
 export const addToWatchlist = createAsyncThunk('content/addToWatchlist', async (contentId, thunkAPI) => {
   try {
-    const response = await contentService.addToWatchlist(contentId);
-    return response.data;
+    const token = thunkAPI.getState().auth.userToken;
+    if (!token) return thunkAPI.rejectWithValue('User not authenticated');
+    const response = await contentService.addToWatchlist(contentId, token);
+    return response;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
 export const likeContent = createAsyncThunk('content/likeContent', async (contentId, thunkAPI) => {
   try {
-    const response = await contentService.likeContent(contentId);
-    return response.data;
+    const token = thunkAPI.getState().auth.userToken;
+    if (!token) return thunkAPI.rejectWithValue('User not authenticated');
+    const response = await contentService.likeContent(contentId, token);
+    return { contentId, ...response };
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
+
+export const unlikeContent = createAsyncThunk('content/unlikeContent', async (contentId, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.userToken;
+      if (!token) return thunkAPI.rejectWithValue('User not authenticated');
+      const response = await contentService.unlikeContent(contentId, token);
+      return { contentId, ...response };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  });
 
 export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', async (_, thunkAPI) => {
   try {
@@ -43,7 +60,7 @@ export const fetchLikedContent = createAsyncThunk('content/fetchLikedContent', a
     const response = await contentService.fetchLikedContent(token);
     return response.data.likedContents;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
@@ -53,7 +70,7 @@ export const fetchFriends = createAsyncThunk('content/fetchFriends', async (_, t
     const response = await contentService.fetchFriends(token);
     return response.data.friends;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
@@ -62,26 +79,27 @@ export const fetchTopTenContent = createAsyncThunk('content/fetchTopTenContent',
     const response = await contentService.fetchTopTenContent();
     return response;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
 export const fetchContentComments = createAsyncThunk('content/fetchContentComments', async (contentId, thunkAPI) => {
   try {
-    const response = await contentService.fetchContentComments(contentId);
+    const token = thunkAPI.getState().auth.userToken;
+    const response = await contentService.fetchContentComments(contentId, token);
     return { contentId, comments: response };
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
 export const postContentComment = createAsyncThunk('content/postContentComment', async ({ contentId, comment }, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.userToken;
-    const response = await contentService.postContentComment({ contentId, comment, token });
+    const response = await contentService.commentOnContent(contentId, comment, token);
     return response;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data);
+    return thunkAPI.rejectWithValue(error.response?.data || error.message);
   }
 });
 
@@ -193,6 +211,9 @@ const contentSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+      .addCase(unlikeContent.fulfilled, (state, action) => {
+        state.likes = state.likes.filter(like => like.contentId !== action.payload.contentId);
       })
       .addCase(fetchLikedContent.pending, (state) => {
         state.isLoading = true;

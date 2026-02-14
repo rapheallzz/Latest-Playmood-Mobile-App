@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import { likeContent, unlikeContent } from '../features/contentSlice';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { FontAwesome } from '@expo/vector-icons';
@@ -55,6 +56,7 @@ const HighlightPlayer = ({ highlight, isActive }) => {
 };
 
 const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const { likes } = useSelector((state) => state.content);
   const [isLiked, setIsLiked] = useState([]);
@@ -99,10 +101,16 @@ const VerticalHighlightViewer = ({ highlights, startIndex, onClose }) => {
             </Pressable>
             <View style={styles.overlay}>
               <View style={styles.bottomInfo}>
-                <View style={styles.creatorInfo}>
+                <Pressable
+                  style={styles.creatorInfo}
+                  onPress={() => {
+                    onClose();
+                    navigation.navigate('CreatorPage', { creator: highlight.creator });
+                  }}
+                >
                   <Image source={{ uri: highlight.creator?.profileImage }} style={styles.avatar} />
                   <Text style={styles.creatorName}>@{highlight.creator?.name || 'Unknown'}</Text>
-                </View>
+                </Pressable>
                 <Text style={styles.title}>{highlight.content.title}</Text>
               </View>
               <View style={styles.actions}>

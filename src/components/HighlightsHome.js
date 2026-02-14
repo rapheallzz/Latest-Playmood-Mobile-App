@@ -65,6 +65,7 @@ const HighlightsHome = () => {
           const creatorFromMap = creators[contentDetails.user._id];
 
           const creatorInfo = {
+            _id: contentDetails.user._id,
             name: contentDetails.user.name,
             profileImage: creatorFromMap ? creatorFromMap.profileImage : '',
           };

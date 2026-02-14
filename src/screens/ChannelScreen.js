@@ -946,6 +946,7 @@ export default function CreatorChannel() {
                     highlights={highlights.map(h => ({
                         ...h,
                         creator: h.creator || {
+                            _id: creatorId,
                             name: creatorData?.name || 'Creator',
                             profileImage: creatorData?.profileImage || ''
                         }

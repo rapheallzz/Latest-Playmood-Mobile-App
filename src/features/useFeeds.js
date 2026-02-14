@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import BASE_API_URL, { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
+import BASE_API_URL from '../apiConfig';
+import uploadService from './uploadService';
 
 const useFeeds = (user, creatorId = null) => {
   const [feeds, setFeeds] = useState([]);
@@ -37,39 +38,39 @@ const useFeeds = (user, creatorId = null) => {
         throw new Error('User not authenticated');
       }
 
-      // 1. Get signature from your server
-      const signatureResponse = await api.post('/api/content/signature', { type: 'images' });
-      const { signature, timestamp, api_key } = signatureResponse.data;
+      // 1. Upload files to Cloudflare R2
+      const uploadPromises = mediaFiles.map(async (file) => {
+        // Get signature for each file as R2 presigned URLs are usually key-specific
+        const signatureFormData = new FormData();
+        signatureFormData.append('provider', 'r2');
+        signatureFormData.append('fileName', file.fileName || (file.mimeType.startsWith('video') ? 'video.mp4' : 'image.jpg'));
+        signatureFormData.append('contentType', file.mimeType);
 
-      // 2. Upload files to Cloudinary
-      const uploadPromises = mediaFiles.map(file => {
-        const resourceType = file.mimeType.startsWith('video') ? 'video' : 'image';
-        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-
-        const formData = new FormData();
-        formData.append('file', {
-          uri: file.uri,
-          name: file.fileName,
-          type: file.mimeType,
-        });
-        formData.append('api_key', api_key);
-        formData.append('timestamp', timestamp);
-        formData.append('signature', signature);
-
-        return axios.post(cloudinaryUrl, formData, {
+        const signatureResponse = await api.post('/api/content/signature', signatureFormData, {
           headers: { 'Content-Type': 'multipart/form-data' },
-        }).then(response => ({
-          url: response.data.secure_url,
-          public_id: response.data.public_id,
-        }));
+        });
+
+        const { uploadUrl, key, publicUrl } = signatureResponse.data;
+
+        await uploadService.uploadToR2(
+          file.uri,
+          uploadUrl,
+          file.mimeType,
+          null // Not tracking individual progress for feed media here
+        );
+
+        return {
+          url: publicUrl || uploadUrl,
+          key: key,
+        };
       });
 
       const uploadedMedia = await Promise.all(uploadPromises);
 
-      // 3. Create feed post on your server
+      // 2. Create feed post on your server
       const postData = {
         caption,
-        type: 'image',
+        type: 'image', // Assuming 'image' type still applies even if it contains videos in media array, as per old code
         media: uploadedMedia,
       };
 
@@ -79,16 +80,9 @@ const useFeeds = (user, creatorId = null) => {
       return response.data; // Return response data to the component
     } catch (error) {
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error("Error data:", error.response.data);
         console.error("Error status:", error.response.status);
-        console.error("Error headers:", error.response.headers);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error("Error request:", error.request);
       } else {
-        // Something happened in setting up the request that triggered an Error
         console.error('Error message:', error.message);
       }
       throw error;

@@ -1,15 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import BASE_API_URL, { CLOUDINARY_CLOUD_NAME } from '../apiConfig';
+import BASE_API_URL from '../apiConfig';
+import uploadService from './uploadService';
 
 export const uploadFile = createAsyncThunk(
   'upload/uploadFile',
-  async ({ videoFile, thumbnailFile, videoMetadata, previewStart, previewEnd }, { getState, rejectWithValue }) => {
-    const { auth } = getState();
+  async ({ videoFile, thumbnailFile, videoMetadata, previewStart, previewEnd }, thunkAPI) => {
+    const { auth } = thunkAPI.getState();
     const token = auth.userToken;
 
     if (!token) {
-      return rejectWithValue('User not authenticated');
+      return thunkAPI.rejectWithValue('User not authenticated');
     }
 
     try {
@@ -17,41 +18,54 @@ export const uploadFile = createAsyncThunk(
         baseURL: BASE_API_URL,
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
       });
 
       // 1. Get signature for video
-      const videoSigResponse = await api.post('/api/content/signature', { type: 'videos' });
-      const videoSigData = videoSigResponse.data;
+      const videoSignatureFormData = new FormData();
+      videoSignatureFormData.append('provider', 'r2');
+      videoSignatureFormData.append('fileName', videoFile.fileName || 'video.mp4');
+      videoSignatureFormData.append('contentType', videoFile.mimeType || 'video/mp4');
 
-      // 2. Upload video to Cloudinary
-      const uploadToCloudinary = async (asset, sigData, resourceType) => {
-        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-        const formData = new FormData();
-        formData.append('file', {
-          uri: asset.uri,
-          name: asset.fileName,
-          type: asset.mimeType,
-        });
-        formData.append('api_key', sigData.api_key);
-        formData.append('timestamp', sigData.timestamp);
-        formData.append('signature', sigData.signature);
+      const videoSigResponse = await api.post('/api/content/signature', videoSignatureFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const { uploadUrl: videoUploadUrl, key: videoKey, publicUrl: videoPublicUrl } = videoSigResponse.data;
 
-        const response = await axios.post(cloudinaryUrl, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return response.data;
-      };
-
-      const videoUploadResponse = await uploadToCloudinary(videoFile, videoSigData, 'video');
+      // 2. Upload video to Cloudflare R2
+      await uploadService.uploadToR2(
+        videoFile.uri,
+        videoUploadUrl,
+        videoFile.mimeType || 'video/mp4',
+        (progress) => {
+          thunkAPI.dispatch(updateUploadProgress(progress));
+        }
+      );
 
       // 3. Handle thumbnail upload
-      let thumbnailUploadResponse = null;
+      let thumbnailData = null;
       if (thumbnailFile) {
-        const thumbSigResponse = await api.post('/api/content/signature', { type: 'images' });
-        const thumbSigData = thumbSigResponse.data;
-        thumbnailUploadResponse = await uploadToCloudinary(thumbnailFile, thumbSigData, 'image');
+        const thumbSignatureFormData = new FormData();
+        thumbSignatureFormData.append('provider', 'r2');
+        thumbSignatureFormData.append('fileName', thumbnailFile.fileName || 'thumbnail.jpg');
+        thumbSignatureFormData.append('contentType', thumbnailFile.mimeType || 'image/jpeg');
+
+        const thumbSigResponse = await api.post('/api/content/signature', thumbSignatureFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const { uploadUrl: thumbUploadUrl, key: thumbKey, publicUrl: thumbPublicUrl } = thumbSigResponse.data;
+
+        await uploadService.uploadToR2(
+          thumbnailFile.uri,
+          thumbUploadUrl,
+          thumbnailFile.mimeType || 'image/jpeg',
+          null // Not tracking thumbnail progress separately
+        );
+
+        thumbnailData = {
+          url: thumbPublicUrl || thumbUploadUrl,
+          key: thumbKey,
+        };
       }
 
       // 4. Construct the final payload
@@ -62,23 +76,23 @@ export const uploadFile = createAsyncThunk(
         previewEnd,
         languageCode: 'en-US',
         video: {
-          public_id: videoUploadResponse.public_id,
-          url: videoUploadResponse.secure_url,
+          url: videoPublicUrl || videoUploadUrl,
+          key: videoKey,
         },
-        ...(thumbnailUploadResponse && {
-          thumbnail: {
-            public_id: thumbnailUploadResponse.public_id,
-            url: thumbnailUploadResponse.secure_url,
-          },
+        ...(thumbnailData && {
+          thumbnail: thumbnailData,
         }),
       };
 
       // 5. Post the final payload to your server
       console.log('Final Payload:', JSON.stringify(finalPayload, null, 2));
-      const response = await api.post('/api/content', finalPayload);
+      const response = await api.post('/api/content', finalPayload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
       return response.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      console.error('Upload thunk error:', err);
+      return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
   }
 );
@@ -92,15 +106,26 @@ const initialState = {
 const uploadSlice = createSlice({
   name: 'upload',
   initialState,
-  reducers: {},
+  reducers: {
+    updateUploadProgress: (state, action) => {
+      state.uploadProgress = action.payload;
+    },
+    resetUpload: (state) => {
+      state.uploadProgress = 0;
+      state.isUploading = false;
+      state.error = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(uploadFile.pending, (state) => {
         state.isUploading = true;
+        state.uploadProgress = 0;
         state.error = null;
       })
       .addCase(uploadFile.fulfilled, (state) => {
         state.isUploading = false;
+        state.uploadProgress = 100;
       })
       .addCase(uploadFile.rejected, (state, action) => {
         state.isUploading = false;
@@ -109,4 +134,5 @@ const uploadSlice = createSlice({
   },
 });
 
+export const { updateUploadProgress, resetUpload } = uploadSlice.actions;
 export default uploadSlice.reducer;

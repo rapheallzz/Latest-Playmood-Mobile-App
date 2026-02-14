@@ -43,7 +43,6 @@ export default function RegistrationScreen() {
     dispatch(registerStart());
     try {
       await dispatch(register({ name, email, password })).unwrap();
-      navigation.navigate('Onboarding');
     } catch (error) {
       console.log('Registration error:', error);
     }

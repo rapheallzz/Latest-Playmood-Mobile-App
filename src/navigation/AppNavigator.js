@@ -6,6 +6,8 @@ import VideoScreen from '../screens/VideoScreen';
 import CreatorChannel from '../screens/ChannelScreen';
 import UploadScreen from '../screens/UploadScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createStackNavigator();
 
@@ -18,6 +20,8 @@ const AppNavigator = () => {
       <Stack.Screen name="CreatorPage" component={CreatorChannel} options={{ headerShown: false }} />
       <Stack.Screen name="PostVideoForReview" component={UploadScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Schedule" component={ScheduleScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };

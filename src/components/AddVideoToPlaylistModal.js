@@ -14,8 +14,8 @@ export default function AddVideoToPlaylistModal({
       visible={isOpen}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+      <Pressable style={styles.centeredView} onPress={onClose}>
+        <Pressable style={styles.modalView} onPress={() => {}}>
           <Text style={styles.modalTitle}>Add Video to Playlist</Text>
 
           <FlatList
@@ -42,7 +42,7 @@ export default function AddVideoToPlaylistModal({
             <Text style={styles.buttonText}>Close</Text>
           </Pressable>
         </View>
-      </View>
+      </Pressable>
     </Modal>
   );
 }

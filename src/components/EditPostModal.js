@@ -15,8 +15,8 @@ export default function EditPostModal({
       visible={isOpen}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+      <Pressable style={styles.centeredView} onPress={onClose}>
+        <Pressable style={styles.modalView} onPress={() => {}}>
           <Text style={styles.modalTitle}>Edit Post</Text>
 
           <TextInput
@@ -43,8 +43,8 @@ export default function EditPostModal({
               <Text style={styles.buttonText}>Save</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

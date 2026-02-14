@@ -51,9 +51,9 @@ const CreateHighlightModal = ({ isOpen, onClose, onCreate, availableVideos }) =>
   };
 
   return (
-    <Modal visible={isOpen} animationType="slide" transparent>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
+    <Modal visible={isOpen} animationType="slide" transparent onRequestClose={onClose}>
+      <Pressable style={styles.modalContainer} onPress={onClose}>
+        <Pressable style={styles.modalContent} onPress={() => {}}>
           <ScrollView>
             <Text style={styles.modalTitle}>Create Highlight</Text>
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -111,8 +111,8 @@ const CreateHighlightModal = ({ isOpen, onClose, onCreate, availableVideos }) =>
               </Pressable>
             </View>
           </ScrollView>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };

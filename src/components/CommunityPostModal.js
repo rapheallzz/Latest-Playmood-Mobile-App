@@ -15,8 +15,8 @@ export default function CommunityPostModal({
       visible={isOpen}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+      <Pressable style={styles.centeredView} onPress={onClose}>
+        <Pressable style={styles.modalView} onPress={() => {}}>
           <Text style={styles.modalTitle}>Create Community Post</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -41,8 +41,8 @@ export default function CommunityPostModal({
               <Text style={styles.buttonText}>Post</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

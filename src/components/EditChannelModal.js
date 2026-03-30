@@ -46,8 +46,8 @@ export default function EditChannelModal({
       visible={isOpen}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+      <Pressable style={styles.centeredView} onPress={onClose}>
+        <Pressable style={styles.modalView} onPress={() => {}}>
           <ScrollView style={{width: '100%'}}>
             <Text style={styles.modalTitle}>Edit Channel</Text>
 
@@ -104,8 +104,8 @@ export default function EditChannelModal({
               <Text style={styles.buttonText}>Close</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

@@ -45,9 +45,9 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
   };
 
   return (
-    <Modal visible={isOpen} animationType="slide" transparent>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
+    <Modal visible={isOpen} animationType="slide" transparent onRequestClose={resetStateAndClose}>
+      <Pressable style={styles.modalContainer} onPress={resetStateAndClose}>
+        <Pressable style={styles.modalContent} onPress={() => {}}>
           <Text style={styles.modalTitle}>Create Feed Post</Text>
           <TextInput
             style={styles.input}
@@ -77,8 +77,8 @@ const CreateFeedPostModal = ({ isOpen, onClose, onCreateFeedPost }) => {
               <Text style={styles.buttonText}>{isUploading ? 'Posting...' : 'Post'}</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };

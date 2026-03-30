@@ -41,7 +41,6 @@ export default function LoginScreen() {
 
     try {
       await dispatch(login({ email, password })).unwrap();
-      navigation.navigate('Home');
     } catch (error) {
       console.log('Login error:', error);
     }

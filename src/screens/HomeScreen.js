@@ -24,20 +24,11 @@ const isTV = Platform.isTV;
 export default function HomeScreen() {
   const navigation = useNavigation();
   const [likecard, setLikeCard] = useState([1]);
-  const user = useSelector((state) => state.user);
 
   const handleTop10Press = () => {
     navigation.navigate('ContentDetails');
   };
 
-  useEffect(() => {
-    if (!user.id) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth' }],
-      });
-    }
-  }, [user.id, navigation]);
 
   return (
     <View style={tw`flex-1 bg-black`}>

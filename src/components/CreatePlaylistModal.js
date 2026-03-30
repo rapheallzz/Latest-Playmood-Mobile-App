@@ -16,8 +16,8 @@ export default function CreatePlaylistModal({
       visible={isOpen}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+      <Pressable style={styles.centeredView} onPress={onClose}>
+        <Pressable style={styles.modalView} onPress={() => {}}>
           <Text style={styles.modalTitle}>{isEditing ? 'Edit Playlist' : 'Create Playlist'}</Text>
 
           <Text style={styles.label}>Name</Text>
@@ -68,8 +68,8 @@ export default function CreatePlaylistModal({
               <Text style={styles.buttonText}>{isEditing ? 'Update' : 'Create'}</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

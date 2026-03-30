@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, FlatList, Linking } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, FlatList, Linking, Modal } from 'react-native';
 import ContentCard from '../components/ContentCard';
 import CommunityPostCard from '../components/CommunityPostCard';
 import axios from 'axios';
@@ -607,20 +607,29 @@ export default function CreatorChannel() {
                         </Pressable>
                     </View>
                     {showMoreMenu && (
-                        <View style={styles.moreMenu}>
-                            <Pressable style={styles.menuItem} onPress={() => setShowPlaylistModal(true)}>
-                                <Text style={styles.menuItemText}>New Playlist</Text>
+                        <Modal
+                            transparent={true}
+                            visible={showMoreMenu}
+                            onRequestClose={() => setShowMoreMenu(false)}
+                            animationType="fade"
+                        >
+                            <Pressable style={styles.modalOverlay} onPress={() => setShowMoreMenu(false)}>
+                                <View style={styles.moreMenu}>
+                                    <Pressable style={styles.menuItem} onPress={() => { setShowMoreMenu(false); setShowPlaylistModal(true); }}>
+                                        <Text style={styles.menuItemText}>New Playlist</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.menuItem} onPress={() => { setShowMoreMenu(false); setShowCreateHighlightModal(true); }}>
+                                        <Text style={styles.menuItemText}>New Highlight</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.menuItem} onPress={() => { setShowMoreMenu(false); setShowCreateFeedPostModal(true); }}>
+                                        <Text style={styles.menuItemText}>New Feed Post</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.menuItem} onPress={() => { setShowMoreMenu(false); handleOpenEditModal(); }}>
+                                        <Text style={styles.menuItemText}>Edit Channel</Text>
+                                    </Pressable>
+                                </View>
                             </Pressable>
-                            <Pressable style={styles.menuItem} onPress={() => setShowCreateHighlightModal(true)}>
-                                <Text style={styles.menuItemText}>New Highlight</Text>
-                            </Pressable>
-                            <Pressable style={styles.menuItem} onPress={() => setShowCreateFeedPostModal(true)}>
-                                <Text style={styles.menuItemText}>New Feed Post</Text>
-                            </Pressable>
-                            <Pressable style={styles.menuItem} onPress={handleOpenEditModal}>
-                                <Text style={styles.menuItemText}>Edit Channel</Text>
-                            </Pressable>
-                        </View>
+                        </Modal>
                     )}
                 </View>
             )}
@@ -1035,13 +1044,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     paddingBottom: 20,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
   moreMenu: {
     backgroundColor: '#1a1a1a',
     borderRadius: 5,
     padding: 10,
     position: 'absolute',
     right: 20,
-    top: 60,
+    top: 350,
     zIndex: 1,
   },
   menuItem: {
